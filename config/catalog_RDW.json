@@ -1,0 +1,39 @@
+{
+  "catalog_name": "RDW",
+  "catalog_endpoint": "https://opendata.rdw.nl",
+  "api_base_path": "https://opendata.rdw.nl",
+  "mappings": {
+    "defaults": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/defaults/RDW.json",
+    "transformations": [
+      {
+        "attribute": "theme",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/RDW__Dataset__Theme.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "accessRights",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/RDW__Dataset__AccessRights.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.format",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/RDW__Distribution__Format.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.mediaType",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/RDW__Distribution__Mediatype.json",
+        "field": "target_value"
+      }
+    ],
+    "blacklists": [
+      {
+        "attribute": "resource.format",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/blacklists/RDW__Distribution__Format.json",
+        "field": "blacklisted"
+      }
+    ],
+    "whitelists": [
+    ]
+  }
+}

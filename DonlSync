@@ -1,0 +1,32 @@
+#!/usr/bin/env php
+<?php
+
+ini_set('display_startup_errors', 1);
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+require __DIR__ . '/vendor/autoload.php';
+
+use DonlSync\Command\CommandFactory;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Dotenv\Dotenv;
+
+try {
+    $dotenv = new Dotenv(false);
+    $dotenv->load(__DIR__ . '/.env');
+
+    $application = new Application();
+    $application->setName($_ENV['APPLICATION_NAME']);
+    $application->addCommands(CommandFactory::getCommands());
+    $application->setCatchExceptions(true);
+
+    $application->run();
+
+    return 0;
+} catch (Throwable $t) {
+    echo 'Uncaught throwable';
+    echo ' Message: ' . $t->getMessage();
+    echo ' Trace: ' . $t->getTraceAsString();
+
+    return 1;
+}

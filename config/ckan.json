@@ -1,0 +1,214 @@
+{
+  "api_row_count": 1000,
+  "name": {
+    "max_length": 100,
+    "regex_pattern": "/[^A-Za-z0-9-]/",
+    "regex_replacement": "-"
+  },
+  "tags": {
+    "max_length": 100,
+    "min_length": 2,
+    "regex_pattern": "/[^A-Za-z0-9-]/",
+    "regex_replacement": "-"
+  },
+  "dataset_mapping": {
+    "identifier": {
+      "target": "identifier",
+      "multi": false
+    },
+    "title": {
+      "target": "title",
+      "multi": false
+    },
+    "description": {
+      "target": "notes",
+      "multi": false
+    },
+    "license": {
+      "target": "license_id",
+      "multi": false
+    },
+    "metadataLanguage": {
+      "target": "metadata_language",
+      "multi": false
+    },
+    "language": {
+      "target": "language",
+      "multi": true
+    },
+    "theme": {
+      "target": "theme",
+      "multi": true
+    },
+    "modificationDate": {
+      "target": "modified",
+      "multi": false
+    },
+    "authority": {
+      "target": "authority",
+      "multi": false
+    },
+    "publisher": {
+      "target": "publisher",
+      "multi": false
+    },
+    "accessRights": {
+      "target": "access_rights",
+      "multi": false
+    },
+    "datasetStatus": {
+      "target": "dataset_status",
+      "multi": false
+    },
+    "landingPage": {
+      "target": "url",
+      "multi": false
+    },
+    "conformsTo": {
+      "target": "conforms_to",
+      "multi": true
+    },
+    "alternativeIdentifier": {
+      "target": "alternate_identifier",
+      "multi": true
+    },
+    "relatedResource": {
+      "target": "related_resource",
+      "multi": true
+    },
+    "source": {
+      "target": "source",
+      "multi": true
+    },
+    "hasVersion": {
+      "target": "has_version",
+      "multi": true
+    },
+    "isVersionOf": {
+      "target": "is_version_of",
+      "multi": true
+    },
+    "releaseDate": {
+      "target": "issued",
+      "multi": false
+    },
+    "version": {
+      "target": "version",
+      "multi": false
+    },
+    "versionNotes": {
+      "target": "version_notes",
+      "multi": true
+    },
+    "datePlanned": {
+      "target": "date_planned",
+      "multi": false
+    },
+    "documentation": {
+      "target": "documentation",
+      "multi": true
+    },
+    "frequency": {
+      "target": "frequency",
+      "multi": false
+    },
+    "provenance": {
+      "target": "provenance",
+      "multi": true
+    },
+    "sample": {
+      "target": "sample",
+      "multi": true
+    },
+    "sourceCatalog": {
+      "target": "source_catalog",
+      "multi": false
+    },
+    "highValue": {
+      "target": "high_value",
+      "multi": false
+    },
+    "referentieData": {
+      "target": "referentie_data",
+      "multi": false
+    },
+    "basisRegister": {
+      "target": "basis_register",
+      "multi": false
+    },
+    "nationalCoverage": {
+      "target": "national_coverage",
+      "multi": false
+    }
+  },
+  "resource_mapping": {
+    "title": {
+      "target": "name",
+      "multi": false
+    },
+    "description": {
+      "target": "description",
+      "multi": false
+    },
+    "license": {
+      "target": "license_id",
+      "multi": false
+    },
+    "accessURL": {
+      "target": "url",
+      "multi": false
+    },
+    "metadataLanguage": {
+      "target": "metadata_language",
+      "multi": false
+    },
+    "format": {
+      "target": "format",
+      "multi": false
+    },
+    "rights": {
+      "target": "rights",
+      "multi": false
+    },
+    "status": {
+      "target": "status",
+      "multi": false
+    },
+    "releaseDate": {
+      "target": "release_date",
+      "multi": false
+    },
+    "modificationDate": {
+      "target": "modification_date",
+      "multi": false
+    },
+    "byteSize": {
+      "target": "size",
+      "multi": false
+    },
+    "mediaType": {
+      "target": "mimetype",
+      "multi": false
+    },
+    "language": {
+      "target": "language",
+      "multi": true
+    },
+    "downloadURL": {
+      "target": "download_url",
+      "multi": true
+    },
+    "linkedSchema": {
+      "target": "linked_schema",
+      "multi": true
+    },
+    "documentation": {
+      "target": "documentation",
+      "multi": true
+    },
+    "distributionType": {
+      "target": "distribution_type",
+      "multi": false
+    }
+  }
+}

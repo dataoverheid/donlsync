@@ -1,0 +1,15 @@
+{
+  "catalog_name": "DONL",
+  "persistent_properties": {
+    "dataset": [
+      "high_value",
+      "basis_register",
+      "referentie_data",
+      "groups"
+    ],
+    "resource": [
+      "link_status",
+      "link_status_last_checked"
+    ]
+  }
+}

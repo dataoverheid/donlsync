@@ -1,0 +1,138 @@
+{
+  "catalog_name": "CBSDerden",
+  "catalog_endpoint": "https://dataderden.cbs.nl/ODataCatalog/",
+  "api_base_path": "https://dataderden.cbs.nl/ODataCatalog/",
+  "mappings": {
+    "defaults": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/defaults/CBSDerden.json",
+    "transformations": [
+      {
+        "attribute": "language",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Dataset__Language.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "metadataLanguage",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Dataset__MetadataLanguage.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "theme",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Dataset__Theme.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "frequency",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Dataset__Frequency.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "authority",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Dataset__Authority.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "landingPage",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Dataset__LandingPage.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.accessURL",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Distribution__AccessURL.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.language",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Distribution__Language.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.metadataLanguage",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Distribution__MetadataLanguage.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.format",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Distribution__Format.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.mediaType",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/CBSDerden__Distribution__Mediatype.json",
+        "field": "target_value"
+      }
+    ],
+    "blacklists": [
+    ],
+    "whitelists": [
+    ]
+  },
+  "xpath_selectors": {
+    "namespaces": {
+      "x": "http://www.w3.org/2005/Atom",
+      "d": "http://schemas.microsoft.com/ado/2007/08/dataservices",
+      "m": "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
+    },
+    "entries": "/x:feed/x:entry",
+    "dataset": {
+      "id": [
+        "./x:content/m:properties/d:Identifier"
+      ],
+      "identifier": [
+        "./x:id"
+      ],
+      "title": [
+        "./x:content/m:properties/d:Title",
+        "./x:content/m:properties/d:ShortTitle"
+      ],
+      "description": [
+        "./x:content/m:properties/d:ShortDescription",
+        "./x:content/m:properties/d:Summary"
+      ],
+      "modificationDate": [
+        "./x:content/m:properties/d:Modified"
+      ],
+      "language": [
+        "./x:content/m:properties/d:Language"
+      ],
+      "metadataLanguage": [
+        "./x:content/m:properties/d:Language"
+      ],
+      "frequency": [
+        "./x:content/m:properties/d:Frequency"
+      ],
+      "authority": [
+        "./x:content/m:properties/d:Catalog"
+      ],
+      "landingPage": [
+        "./x:content/m:properties/d:Catalog"
+      ],
+      "theme": [
+        "/x:feed/x:entry/x:content/m:properties/d:Title"
+      ]
+    },
+    "resource": {
+      "id": [
+        "./x:content/m:properties/d:Identifier"
+      ],
+      "api_url": [
+        "./x:content/m:properties/d:ApiUrl"
+      ],
+      "feed_url": [
+        "./x:content/m:properties/d:FeedUrl"
+      ],
+      "accessURL": [
+        "./x:content/m:properties/d:Catalog"
+      ],
+      "description": [
+        "./x:content/m:properties/d:Summary"
+      ],
+      "language": [
+        "./x:content/m:properties/d:Language"
+      ],
+      "metadataLanguage": [
+        "./x:content/m:properties/d:Language"
+      ]
+    }
+  },
+  "identifier_prefix": "https://dataderden.cbs.nl/ODataApi/OData/"
+}

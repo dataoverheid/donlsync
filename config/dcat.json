@@ -1,0 +1,15 @@
+{
+  "datetime_appendage": "T00:00:00",
+  "license": {
+    "fallback": "http://standaarden.overheid.nl/owms/terms/geslotenlicentie",
+    "closed": [
+      "http://standaarden.overheid.nl/owms/terms/geslotenlicentie",
+      "http://standaarden.overheid.nl/owms/terms/licentieonbekend",
+      "http://standaarden.overheid.nl/owms/terms/geogedeeld"
+    ]
+  },
+  "access_rights": {
+    "public": "http://publications.europa.eu/resource/authority/access-right/PUBLIC",
+    "restricted": "http://publications.europa.eu/resource/authority/access-right/RESTRICTED"
+  }
+}

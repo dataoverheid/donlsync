@@ -1,0 +1,5 @@
+{
+  "timezone": "Europe/Amsterdam",
+  "format": "d-m-Y H:i:s",
+  "duration_format": "%H hours, %i minutes, %s seconds"
+}

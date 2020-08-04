@@ -1,0 +1,18 @@
+# IDE
+/.idea/*
+
+# Composer
+/vendor/*
+/composer.phar
+
+# Test
+/test-reports/*
+/.php_cs.cache
+/.phpunit.result.cache
+/.phpunit.xml
+
+# Generated files
+/config/email_recipients.json
+/cache/*
+/log/*
+/.env

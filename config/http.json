@@ -1,0 +1,9 @@
+{
+  "procotol": "https://",
+  "request_headers": {
+    "X-Source-Application": "DonlSync (data.overheid.nl)"
+  },
+  "request_timeout": 20,
+  "read_timeout": 20,
+  "connect_timeout": 20
+}

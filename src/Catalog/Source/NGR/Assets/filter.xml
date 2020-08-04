@@ -1,0 +1,4 @@
+<ogc:PropertyIsLike wildCard="*" singleChar="_" escapeChar="\">
+    <ogc:PropertyName>%s</ogc:PropertyName>
+    <ogc:Literal>%s</ogc:Literal>
+</ogc:PropertyIsLike>

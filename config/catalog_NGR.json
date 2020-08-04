@@ -1,0 +1,202 @@
+{
+  "catalog_name": "NGR",
+  "catalog_endpoint": "https://nationaalgeoregister.nl",
+  "api_base_path": "https://nationaalgeoregister.nl",
+  "mappings": {
+    "defaults": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/defaults/NGR.json",
+    "transformations": [
+      {
+        "attribute": "license",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Dataset__License.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "theme",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Dataset__Theme.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "language",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Dataset__Language.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "metadataLanguage",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Dataset__MetadataLanguage.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "authority",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Dataset__Authority.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "publisher",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Dataset__Publisher.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.license",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Distribution__License.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.language",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Distribution__Language.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.metadataLanguage",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Distribution__MetadataLanguage.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.format",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Distribution__Format.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.mediaType",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/NGR__Distribution__Mediatype.json",
+        "field": "target_value"
+      }
+    ],
+    "blacklists": [
+    ],
+    "whitelists": [
+    ]
+  },
+  "api": {
+    "id_rows": 100,
+    "dataset_rows": 25,
+    "requests": {
+      "dataset_count": "geonetwork/srv/dut/q?_content_type=json&from=0&to=0&type=dataset",
+      "dataset_ids": "geonetwork/srv/dut/q?_content_type=json&from=%s&to=%s&type=dataset&buildSummary=false&sortBy=changeDate",
+      "datasets": "geonetwork/srv/dut/csw"
+    }
+  },
+  "identifier_pattern": "https://nationaalgeoregister.nl/geonetwork?uuid=%s",
+  "xpath_selectors": {
+    "namespaces": {
+      "csw": "http://www.opengis.net/cat/csw/2.0.2",
+      "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+      "gmd": "http://www.isotc211.org/2005/gmd",
+      "gco": "http://www.isotc211.org/2005/gco",
+      "gts": "http://www.isotc211.org/2005/gts",
+      "srv": "http://www.isotc211.org/2005/srv",
+      "gml": "http://www.opengis.net/gml",
+      "gmx": "http://www.isotc211.org/2005/gmx",
+      "xlink": "http://www.w3.org/1999/xlink",
+      "geonet": "http://www.fao.org/geonetwork"
+    },
+    "dataset": {
+      "identifier": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:fileIdentifier/gco:CharacterString"
+      ],
+      "title": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString"
+      ],
+      "description": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:abstract/gco:CharacterString",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gco:CharacterString"
+      ],
+      "keyword": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/*/gmd:descriptiveKeywords/*/gmd:keyword/gco:CharacterString"
+      ],
+      "theme": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/*/gmd:topicCategory/gmd:MD_TopicCategoryCode"
+      ],
+      "landingPage": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:supplementalInformation/gco:CharacterString"
+      ],
+      "modificationDate": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue=\"revision\"]",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:DateTime"
+      ],
+      "releaseDate": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue=\"creation\"]",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gmd:CI_Date/gmd:date/gco:Date[../../gmd:dateType/gmd:CI_DateTypeCode/@codeListValue=\"publication\"]"
+      ],
+      "license": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gmx:Anchor/@xlink:href",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gmx:Anchor",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:otherConstraints/gco:CharacterString",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_Constraints/gmd:useLimitation/gco:CharacterString"
+      ],
+      "contact_point_name": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:individualName/gco:CharacterString[string-length(text()) > 0]",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString[string-length(text()) > 0]",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString[string-length(text()) > 0]"
+      ],
+      "contact_point_email": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:address/gmd:CI_Address/gmd:electronicMailAddress/gco:CharacterString",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:address/gmd:CI_Address/gmd:electronicMailAddress/gco:CharacterString[string-length(text()) > 0]"
+      ],
+      "contact_point_webpage": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:linkage/gmd:URL",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:linkage/gmd:URL[string-length(text()) > 0]"
+      ],
+      "contact_point_phone": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:phone/gmd:CI_Telephone/gmd:voice/gco:CharacterString",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:phone/gmd:CI_Telephone/gmd:voice/gco:CharacterString[string-length(text()) > 0]"
+      ],
+      "authority": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString"
+      ],
+      "publisher": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString"
+      ],
+      "language": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gmd:LanguageCode/@codeListValue",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gco:CharacterString"
+      ],
+      "metadataLanguage": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gmd:LanguageCode/@codeListValue",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gco:CharacterString"
+      ],
+      "conformsTo": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:MD_Format/gmd:specification/gmx:Anchor/@xlink:href",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:MD_Format/gmd:specification/gmx:Anchor"
+      ],
+      "distribution": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine[string-length(gmd:CI_OnlineResource/gmd:linkage/gmd:URL) > 0]"
+      ]
+    },
+    "resource": {
+      "title": [
+        "gmd:CI_OnlineResource/gmd:name/gco:CharacterString"
+      ],
+      "description": [
+        "gmd:CI_OnlineResource/gmd:description/gmx:Anchor",
+        "gmd:CI_OnlineResource/gmd:description/gco:CharacterString",
+        "gmd:CI_OnlineResource/gmd:protocol/gmx:Anchor",
+        "gmd:CI_OnlineResource/gmd:protocol/gco:CharacterString"
+      ],
+      "accessURL": [
+        "gmd:CI_OnlineResource/gmd:linkage/gmd:URL"
+      ],
+      "format": [
+        "gmd:CI_OnlineResource/gmd:protocol/gmx:Anchor",
+        "gmd:CI_OnlineResource/gmd:protocol/gco:CharacterString",
+        "/csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributionFormat/gmd:MD_Format/gmd:name/gmx:Anchor",
+        "/csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributionFormat/gmd:MD_Format/gmd:name/gco:CharacterString"
+      ],
+      "mediaType": [
+        "gmd:CI_OnlineResource/gmd:protocol/gmx:Anchor",
+        "gmd:CI_OnlineResource/gmd:protocol/gco:CharacterString",
+        "/csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:distributionFormat/gmd:MD_Format/gmd:name/gco:CharacterString"
+      ],
+      "language": [
+        "/csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gmd:LanguageCode/@codeListValue",
+        "/csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gco:CharacterString"
+      ],
+      "metadataLanguage": [
+        "/csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gmd:LanguageCode/@codeListValue",
+        "/csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:language/gco:CharacterString"
+      ]
+    }
+  }
+}
