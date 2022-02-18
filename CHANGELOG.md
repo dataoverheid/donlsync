@@ -1,5 +1,154 @@
 # Changelog
 
+## 4.7.4 (2022/02)
+
+- Downgraded the `composer.lock` file to satisfy the PHP 7.4 minimum requirement.
+
+## 4.7.3 (2022/01)
+
+- Updated the API endpoint for the Nijmegen source catalog.
+
+## 4.7.2 (2021/09)
+
+- Dropped the unique index on the UnmappedValues table as text columns cannot be part of an index for some RDBMS's. This constraint was already enforced throughout the codebase, so it introduces no functional difference.
+
+## 4.7.1 (2021/08)
+
+- The `dataset.relatedResource` property harvested from the Eindhoven source catalog is now processed by the `StringHelper::repairURL` method before it is offered to the dataset builder.
+- If a string given to the `StringHelper::repairURL` method contains a `|` character, then everything up to and including that character is removed from the string before performing any other repairs.
+
+## 4.7.0 (2021/08)
+
+- The Stelselcatalogus (SC) source catalog is now included in the manual and scheduled executions of DonlSync.
+- Updated the Stelselcatalogus source catalog to only harvest datasets which have at least 1 distribution.
+- Updated the Nijmegen and Stelselcatalogus source catalogs to repair any harvested `distribution.accessURL` properties before the datasets are offered to the DatasetBuilder.
+- Updated the `StringHelper::repairURL` method so that it can repair several new cases of bad URLs.
+- Updated the `.env.dist` file to include the CKAN credentials for the Stelselcatalogus source catalog. This appears to have been omitted in version `4.5.0`.
+- DonlSync will now register missing mappings during the harvesting process. A mapping is considered missing when the harvested value is equal to the effective value after applying all the mappings _and_ the effective value is not valid according to the DCAT validation model. The missing mappings are included in the `ZIP` archive of the scheduled execution in a `{source catalog}__unmapped__{date}.log` file. Entries in this file are formatted as `{object}, {attribute}, {value}`.
+
+**Note** This version requires an update to the DonlSync database. Run `php DonlSync InstallDatabase` to perform these database updates.
+
+## 4.6.1 (2021/07)
+
+- Fix for Eindhoven source catalog for when a dataschema distribution was being created for a dataset without explicit language information.
+- Expanded the CKAN keyword transformer to additionally strip any forward slashes from the keyword.
+- Changed the restart policy of the local `docker-compose.yml` to "no".
+
+## 4.6.0 (2021/06)
+
+- Convert HTML to MarkDown in `description` (in dataset and distributions) fields in Eindhoven datasets.
+
+## 4.5.1 (2021/06)
+
+- Change implementation of determination of `dataschema` distributions.
+- Let Stelsel Catalogus (SC) use its own defaults mapping.
+
+## 4.5.0 (2021/06)
+
+- Add the "pseudo-harvesting" of Stelsel Catalogus (SC) datasets. This means that _existing_ SC datasets are harvested and corresponding _begrippen_ (concepts) and _gegevenselementen_ (data schemas) are harvested/updated while doing so.
+
+## 4.4.1 (2021/06)
+
+- Harvesting the bounding box metadata from NGR can now be enabled/disabled via a key in the `catalog_NGR.json` configuration file.
+- Updated the endpoint of the Nijmegen catalog API and updated the query for retrieving the Nijmegen datasets from the API.
+
+## 4.4.0 (2021/05)
+
+- Added value list table for attributes in `FeatureCatalogue` of NGR datasets.
+
+## 4.3.0 (2021/05)
+
+- Added support for `Datasetschema` of Eindhoven datasets. A `Datasetschema` of an Eindhoven dataset describes the content of a dataset. It is transformed to a distribution.
+
+## 4.2.0 (2021/04)
+
+- Added support for `FeatureCatalogue` of NGR datasets. A `FeatureCatalogue` of an NGR dataset describes the content of a dataset. It is transformed to a distribution.
+
+## 4.1.0 (2021/04)
+
+- Disabled PersistentProperties of the `DONLTargetCatalog`. This feature is currently bugged and prevents certain resources from being sent to CKAN.
+- The NGR source catalog will now harvest graphics as DCAT Distributions with type Visualization.
+- Moved the NGR method to repair URLs to an application-wide class so that it can be reused for other source catalogs. The new method includes several new edge-cases to repair and is backed by several unit tests.
+
+## 4.0.1 (2021/04)
+
+- Support storing the computed metadata checksum in CKAN for later retrieval.
+
+## 4.0.0 (2021/04)
+
+- Minimum PHP version raised to `7.4`. Several parts of the codebase were updated to use the new features introduced in this PHP version, such as class property type-hinting.
+- Introduced support for `PHP 8.0`.
+- Included a new source catalog 'Eindhoven'. This source catalog harvests the [data.eindhoven.nl](https://data.eindhoven.nl) catalog.
+- Refactored all database interactions such that different RDBM's can be used. There is no longer a hard requirement on MySQL.
+- The PHPDoc of class properties were expanded to include a description of the property.
+- Updated the various Composer dependencies.
+- Included a `docker-compose.yml` file for local development.
+- All shell scripts were moved the the `./bin` directory.
+- The `Application` god-object now has an accompanying interface `ApplicationInterface`.
+- Optimized the procedure for comparing the harvested dataset to the dataset on the catalog. Only a single `package_show` API call will now be used for multiple comparions (`persistent_properties` and `resource.id checks`).
+- The `NGRSourceCatalog` is now capable of harvesting geo and temporal metadata from the NGR source catalog.
+- The fallback license has been updated to `licentieonbekend` to better describe the understanding of the license metadata.
+
+## 3.2.0 (2020/09)
+
+- Added Docker support.
+- Updated several Composer dependencies.
+- Set executable bits to the `*.sh` files in the `shell/` directory.
+
+## 3.1.5 (2020/09)
+
+- Updated Gitlab CI pipeline to perform level 6 static analysis. All code is now expected to pass level 6.
+- Updated typehints of the various `*BuildRule` classes to ensure proper type-hinting throughout the application.
+- Updated several `array` typehints to more accurately describe the contents of said `array`.
+- Reduced code duplication in the various `*BuildRule` implementations.
+- Renamed `DCATDistributionBuildRule` to `DONLDistributionBuildRule` as to properly indicate which type of `DCATEntity` is being built by the `BuildRule`.
+- Explicit `int` to `string` conversion while writing output.
+
+## 3.1.4 (2020/08)
+
+- Fixed a bug that prevented the recognition of pre-existing resources.
+- Updated `Composer` dependencies.
+- Increased UnitTest coverage of:
+    - `DonlSync\Catalog\Target\DONL`
+
+## 3.1.3 (2020/08)
+
+- The output of `Application::version()` is now only computed once per execution. 
+- `SendLogsCommand` now throws a `DonlSyncRuntimeException` when adding a recipient fails.
+- `DateTimer` now throws a `DonlSyncRuntimeException` in the following cases:
+    - When trying to end a timer that hasn't started yet.
+    - When the `DateTimeFormat` is invalid.
+    - When the given configuration is missing keys.
+- Several typehints have been updated to indicate that they *can* contain `null` values.
+- `DONLTargetCatalog` now throws a `DonlSyncRuntimeException` when not all credentials are provided to methods that require credentials.
+- Updated `Composer` dependencies.
+- Updated Gitlab CI pipeline to include several analysis tools.
+- Increased UnitTest coverage of:
+    - `DonlSync\Helper`
+    - `DonlSync`
+
+## 3.1.2 (2020/08)
+
+- Removed unnecessary `file_exists()` call in `Configuration::createFromJSONFile()` as `is_readable()` already covers that case.
+- `DateTimer` now throws `DonlSyncRuntimeException`s on any `DateTime` related error.
+- Increased UnitTest coverage of:
+    - `DonlSync`
+
+## 3.1.1 (2020/08)
+
+- Fixed a bug that prevented an empty JSON list from being accepted by `MappingLoader::loadJSONContentsFromURL()`.
+- `BuilderConfiguration::getDefaults()` can now properly return `null` when no `DefaultMapper` is assigned.
+- Updated several `composer` dependencies.
+- Updated PHP-CS-Fixer config to include `test/`.
+- Updated `phpunit.xml.dist` to PHPUnit 9.3's XSD.
+- Increased UnitTest coverage of:
+    - `DonlSync\Command`
+    - `DonlSync\Dataset`
+    - `DonlSync\Dataset\Builder`
+    - `DonlSync\Dataset\Mapping`
+    - `DonlSync\Helper`
+- Added Gitlab CI integration.
+
 ## 3.1.0 (2020/07)
 
 - The `Summarizer` now maintains and stores a summary on a per catalog basis. 

@@ -11,7 +11,11 @@ use DonlSync\Exception\DonlSyncRuntimeException;
  */
 class Summarizer
 {
-    /** @var string[] */
+    /**
+     * The list of keys present in the current data.
+     *
+     * @var string[]
+     */
     public const SUMMARY_KEYS = [
         'validated_datasets',
         'created_datasets',
@@ -23,16 +27,24 @@ class Summarizer
         'conflict_datasets',
     ];
 
-    /** @var array */
-    private $data;
+    /**
+     * The initial summary data loaded from a summary JSON file.
+     *
+     * @var array<string, array>
+     */
+    private array $data;
 
-    /** @var array */
-    private $current_data;
+    /**
+     * The summary data of the current execution.
+     *
+     * @var array<string, int>
+     */
+    private array $current_data;
 
     /**
      * Summarizer constructor.
      *
-     * @param array $data The base summary to start with
+     * @param array<string, array> $data The base summary to start with
      */
     public function __construct(array $data = [])
     {
@@ -74,9 +86,9 @@ class Summarizer
      *
      * @param string $key The key to retrieve
      *
-     * @return mixed The value behind the key
+     * @return int The value behind the key
      */
-    public function get(string $key)
+    public function get(string $key): int
     {
         if (!array_key_exists($key, $this->current_data)) {
             throw new DonlSyncRuntimeException('unknown summary key ' . $key);

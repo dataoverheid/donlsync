@@ -3,7 +3,8 @@
 namespace DonlSync\Database\Repository;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
+use Doctrine\DBAL\Schema\Table;
 use DonlSync\Dataset\DatasetContainer;
 
 /**
@@ -13,7 +14,11 @@ use DonlSync\Dataset\DatasetContainer;
  */
 class ProcessedDatasetsRepository
 {
-    /** @var string */
+    /**
+     * The name of the table in the database.
+     *
+     * @var string
+     */
     public const TABLE_NAME = 'ProcessedDataset';
 
     /**
@@ -25,19 +30,32 @@ class ProcessedDatasetsRepository
      */
     public static function createTable(Connection $connection): void
     {
-        $connection->executeQuery('
-            CREATE TABLE IF NOT EXISTS ProcessedDataset (
-                `catalog_name`       VARCHAR(100)     NOT NULL,
-                `catalog_identifier` VARCHAR(255)     NOT NULL,
-                `target_identifier`  VARCHAR(255)     DEFAULT NULL,
-                `dataset_hash`       CHAR(32)         DEFAULT NULL,
-                `assigned_number`    INT(10) UNSIGNED NOT NULL      AUTO_INCREMENT,
-            
-                PRIMARY KEY (`catalog_name`, `catalog_identifier`),
-                UNIQUE INDEX (`target_identifier`),
-                INDEX (`assigned_number`)
-            ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+        $schema = $connection->getSchemaManager();
+
+        if ($schema->tablesExist(self::TABLE_NAME)) {
+            return;
+        }
+
+        $processed_dataset = new Table(self::TABLE_NAME);
+
+        $processed_dataset->addColumn('catalog_name', 'string');
+        $processed_dataset->addColumn('catalog_identifier', 'string');
+        $processed_dataset->addColumn('target_identifier', 'string', [
+            'notnull' => false,
+        ]);
+        $processed_dataset->addColumn('dataset_hash', 'string', [
+            'notnull' => false,
+        ]);
+        $processed_dataset->addColumn('assigned_number', 'integer', [
+            'unsigned'      => true,
+            'autoincrement' => true,
+        ]);
+
+        $processed_dataset->setPrimaryKey(['catalog_name', 'catalog_identifier']);
+        $processed_dataset->addUniqueIndex(['target_identifier']);
+        $processed_dataset->addIndex(['assigned_number']);
+
+        $schema->createTable($processed_dataset);
     }
 
     /**
@@ -48,23 +66,25 @@ class ProcessedDatasetsRepository
      *
      * @throws DBALException Thrown on any database interaction error
      *
-     * @return array The records matching the query
+     * @return array<int, array> The records matching the query
      */
     public static function getRecordsByCatalogName(Connection $connection,
                                                    string $catalog_name): array
     {
-        $statement = $connection->prepare('
-            SELECT  catalog_name, 
-                    catalog_identifier, 
-                    target_identifier, 
-                    dataset_hash, 
-                    assigned_number
-            FROM    ProcessedDataset
-            WHERE   catalog_name = ?
-        ');
-        $statement->execute([$catalog_name]);
+        $qb = $connection->createQueryBuilder();
 
-        return $statement->fetchAll();
+        return $qb->select(
+                'catalog_name',
+                'catalog_identifier',
+                'target_identifier',
+                'dataset_hash',
+                'assigned_number'
+            )
+            ->from(self::TABLE_NAME)
+            ->where($qb->expr()->eq('catalog_name', ':catalog_name'))
+            ->setParameter('catalog_name', $catalog_name)
+            ->execute()
+            ->fetchAllAssociative();
     }
 
     /**
@@ -77,26 +97,26 @@ class ProcessedDatasetsRepository
      * - dataset_hash
      * - assigned_number
      *
-     * @param Connection $connection The current database connection
-     * @param array      $record     The record to create
+     * @param Connection           $connection The current database connection
+     * @param array<string, mixed> $record     The record to create
      *
      * @throws DBALException Thrown on any database interaction error
      */
     public static function insertRecord(Connection $connection, array $record): void
     {
-        $statement = $connection->prepare('
-            INSERT INTO ProcessedDataset
-                (catalog_name, catalog_identifier, target_identifier, dataset_hash, assigned_number)
-                VALUES(?, ?, ?, ?, ?)
-        ');
-        $statement->execute([
-            $record['catalog_name'],
-            $record['catalog_identifier'],
-            $record['target_identifier'],
-            $record['dataset_hash'],
-            $record['assigned_number'],
-        ]);
-        $statement->closeCursor();
+        $connection->createQueryBuilder()
+            ->insert(self::TABLE_NAME)
+            ->setValue('catalog_name', ':catalog_name')
+            ->setValue('catalog_identifier', ':catalog_identifier')
+            ->setValue('target_identifier', ':target_identifier')
+            ->setValue('dataset_hash', ':dataset_hash')
+            ->setValue('assigned_number', ':assigned_number')
+            ->setParameter('catalog_name', $record['catalog_name'])
+            ->setParameter('catalog_identifier', $record['catalog_identifier'])
+            ->setParameter('target_identifier', $record['target_identifier'])
+            ->setParameter('dataset_hash', $record['dataset_hash'])
+            ->setParameter('assigned_number', $record['assigned_number'])
+            ->execute();
     }
 
     /**
@@ -110,12 +130,11 @@ class ProcessedDatasetsRepository
     public static function deleteRecordByTargetIdentifier(Connection $connection,
                                                           string $target_identifier): void
     {
-        $statement = $connection->prepare('
-            DELETE FROM ProcessedDataset
-                WHERE   target_identifier = ?;
-        ');
-        $statement->execute([$target_identifier]);
-        $statement->closeCursor();
+        $connection->createQueryBuilder()
+            ->delete(self::TABLE_NAME)
+            ->where('target_identifier = :target_identifier')
+            ->setParameter('target_identifier', $target_identifier)
+            ->execute();
     }
 
     /**
@@ -128,16 +147,13 @@ class ProcessedDatasetsRepository
      */
     public static function updateRecord(Connection $connection, DatasetContainer $record): void
     {
-        $statement = $connection->prepare('
-            UPDATE ProcessedDataset
-                SET   dataset_hash = ?
-                WHERE target_identifier = ?
-        ');
-        $statement->execute([
-            $record->getDatasetHash(),
-            $record->getTargetIdentifier(),
-        ]);
-        $statement->closeCursor();
+        $qb = $connection->createQueryBuilder();
+        $qb->update(self::TABLE_NAME)
+            ->set('dataset_hash', ':dataset_hash')
+            ->where($qb->expr()->eq('target_identifier', ':target_identifier'))
+            ->setParameter('dataset_hash', $record->getDatasetHash())
+            ->setParameter('target_identifier', $record->getTargetIdentifier())
+            ->execute();
     }
 
     /**
@@ -151,16 +167,13 @@ class ProcessedDatasetsRepository
     public static function createMinimalRecord(Connection $connection,
                                                DatasetContainer $dataset): void
     {
-        $statement = $connection->prepare('
-            INSERT INTO ProcessedDataset
-                (catalog_name, catalog_identifier)
-                VALUES (?, ?)
-        ');
-        $statement->execute([
-            $dataset->getCatalogName(),
-            $dataset->getCatalogIdentifier(),
-        ]);
-        $statement->closeCursor();
+        $connection->createQueryBuilder()
+            ->insert(self::TABLE_NAME)
+            ->setValue('catalog_name', ':catalog_name')
+            ->setValue('catalog_identifier', ':catalog_identifier')
+            ->setParameter('catalog_name', $dataset->getCatalogName())
+            ->setParameter('catalog_identifier', $dataset->getCatalogIdentifier())
+            ->execute();
     }
 
     /**
@@ -171,7 +184,7 @@ class ProcessedDatasetsRepository
      * @param string     $name       The catalog_name of the record
      * @param string     $identifier The catalog_identifier of the record
      *
-     *@throws DBALException Thrown on any database interaction error
+     * @throws DBALException Thrown on any database interaction error
      *
      * @return int The assigned number for the requested record
      */
@@ -179,19 +192,17 @@ class ProcessedDatasetsRepository
                                                                        string $name,
                                                                        string $identifier): int
     {
-        $statement = $connection->prepare('
-            SELECT  assigned_number
-            FROM    ProcessedDataset
-            WHERE   catalog_name = ?
-              AND   catalog_identifier = ?
-        ');
-        $statement->execute([
-            $name,
-            $identifier,
-        ]);
-        $results = $statement->fetchAll();
+        $qb      = $connection->createQueryBuilder();
+        $results = $qb->select('assigned_number')
+            ->from(self::TABLE_NAME)
+            ->where($qb->expr()->eq('catalog_name', ':catalog_name'))
+            ->andWhere($qb->expr()->eq('catalog_identifier', ':catalog_identifier'))
+            ->setParameter('catalog_name', $name)
+            ->setParameter('catalog_identifier', $identifier)
+            ->execute()
+            ->fetchAllAssociative();
 
-        if (0 == count($results)) {
+        if (0 === count($results)) {
             throw new DBALException('No results for query');
         }
 
@@ -210,21 +221,18 @@ class ProcessedDatasetsRepository
     public static function updateRecordFully(Connection $connection,
                                              DatasetContainer $dataset): void
     {
-        $statement = $connection->prepare('
-            UPDATE ProcessedDataset
-                SET     target_identifier = ?,
-                        dataset_hash = ?
-                WHERE   catalog_name = ?
-                  AND   catalog_identifier = ?
-                  AND   assigned_number = ?
-        ');
-        $statement->execute([
-            $dataset->getTargetIdentifier(),
-            $dataset->getDatasethash(),
-            $dataset->getCatalogName(),
-            $dataset->getCatalogIdentifier(),
-            $dataset->getAssignedNumber(),
-        ]);
-        $statement->closeCursor();
+        $qb = $connection->createQueryBuilder();
+        $qb->update(self::TABLE_NAME)
+            ->set('target_identifier', ':target_identifier')
+            ->set('dataset_hash', ':dataset_hash')
+            ->where($qb->expr()->eq('catalog_name', ':catalog_name'))
+            ->andWhere($qb->expr()->eq('catalog_identifier', ':catalog_identifier'))
+            ->andWhere($qb->expr()->eq('assigned_number', ':assigned_number'))
+            ->setParameter('target_identifier', $dataset->getTargetIdentifier())
+            ->setParameter('dataset_hash', $dataset->getDatasetHash())
+            ->setParameter('catalog_name', $dataset->getCatalogName())
+            ->setParameter('catalog_identifier', $dataset->getCatalogIdentifier())
+            ->setParameter('assigned_number', $dataset->getAssignedNumber())
+            ->execute();
     }
 }

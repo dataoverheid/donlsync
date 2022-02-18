@@ -3,7 +3,7 @@
 namespace DonlSync\Catalog\Source\ODataCatalog;
 
 use DOMNode;
-use DonlSync\Application;
+use DonlSync\ApplicationInterface;
 use DonlSync\Catalog\Source\ISourceCatalog;
 use DonlSync\Catalog\Source\ODataCatalog\BuildRule\ODataCatalogBuildRuleFactory;
 use DonlSync\Catalog\Source\ODataCatalog\Tools\ODataCatalogXMLMetadataExtractor;
@@ -24,37 +24,60 @@ use GuzzleHttp\Exception\RequestException;
  */
 class ODataCatalog implements ISourceCatalog
 {
-    /** @var string */
-    private $catalog_name;
+    /**
+     * The name of the catalog.
+     */
+    private string $catalog_name;
 
-    /** @var string */
-    private $catalog_endpoint;
+    /**
+     * The URL of the catalog.
+     */
+    private string $catalog_endpoint;
 
-    /** @var string[] */
-    private $credentials;
+    /**
+     * The credentials to use when sending the harvested datasets to the target catalog.
+     *
+     * @var array<string, string>
+     */
+    private array $credentials;
 
-    /** @var Client */
-    private $api_client;
+    /**
+     * The Guzzle client for interacting with the catalog API.
+     */
+    private Client $api_client;
 
-    /** @var Client */
-    private $theme_client;
+    /**
+     * The Guzzle client for interacting with the catalog theme API.
+     */
+    private Client $theme_client;
 
-    /** @var BuilderConfiguration */
-    private $builder_config;
+    /**
+     * The configuration that should be given to the builder. This configuration instructs the
+     * builder how to construct datasets from the data harvested from this catalog.
+     */
+    private BuilderConfiguration $builder_config;
 
-    /** @var array */
-    private $xpath;
+    /**
+     * The XPath queries per field for harvesting the metadata of said field.
+     *
+     * @var array<string, mixed>
+     */
+    private array $xpath;
 
-    /** @var string */
-    private $identifier_prefix;
+    /**
+     * The prefix to use when constructing identifier properties of harvested datasets.
+     */
+    private string $identifier_prefix;
 
-    /** @var Configuration */
-    private $dcat_config;
+    /**
+     * The DCAT configuration data.
+     */
+    private Configuration $dcat_config;
 
     /**
      * {@inheritdoc}
      */
-    public function __construct(Configuration $config, Application $application)
+    public function __construct(Configuration $config, ApplicationInterface $application)
     {
         try {
             $this->catalog_name      = $config->get('catalog_name');
@@ -158,7 +181,7 @@ class ODataCatalog implements ISourceCatalog
      * @param ODataCatalogXMLMetadataExtractor $extractor The XML extractor
      * @param DOMNode                          $entry     The node holding the individual dataset
      *
-     * @return array|null The extracted dataset or null if none were found
+     * @return array<string, mixed>|null The extracted dataset or null if none were found
      */
     private function extractDataset(ODataCatalogXMLMetadataExtractor $extractor,
                                     DOMNode $entry): ?array
@@ -210,7 +233,7 @@ class ODataCatalog implements ISourceCatalog
 
             return $dataset;
         } catch (CatalogHarvestingException $e) {
-            return [];
+            return null;
         }
     }
 

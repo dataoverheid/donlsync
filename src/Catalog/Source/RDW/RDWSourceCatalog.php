@@ -2,7 +2,7 @@
 
 namespace DonlSync\Catalog\Source\RDW;
 
-use DonlSync\Application;
+use DonlSync\ApplicationInterface;
 use DonlSync\Catalog\Source\ISourceCatalog;
 use DonlSync\Catalog\Source\RDW\BuildRule\RDWBuildRuleFactory;
 use DonlSync\Configuration;
@@ -21,31 +21,49 @@ use GuzzleHttp\Exception\RequestException;
  */
 class RDWSourceCatalog implements ISourceCatalog
 {
-    /** @var string */
-    private $catalog_name;
+    /**
+     * The name of the catalog.
+     */
+    private string $catalog_name;
 
-    /** @var string */
-    private $catalog_endpoint;
+    /**
+     * The URL of the catalog.
+     */
+    private string $catalog_endpoint;
 
-    /** @var string[] */
-    private $credentials;
+    /**
+     * The credentials to use when sending the harvested datasets to the target catalog.
+     *
+     * @var array<string, string>
+     */
+    private array $credentials;
 
-    /** @var Client */
-    private $api_client;
+    /**
+     * The Guzzle client for interacting with the catalog API.
+     */
+    private Client $api_client;
 
-    /** @var BuilderConfiguration */
-    private $builder_config;
+    /**
+     * The configuration that should be given to the builder. This configuration instructs the
+     * builder how to construct datasets from the data harvested from this catalog.
+     */
+    private BuilderConfiguration $builder_config;
 
-    /** @var Configuration */
-    private $dcat_config;
+    /**
+     * The DCAT configuration data.
+     */
+    private Configuration $dcat_config;
 
-    /** @var string */
-    private $date_appendage;
+    /**
+     * The 'timestring' to append to any datetime fields to ensure that valid datetime objects can
+     * be constructed.
+     */
+    private string $date_appendage;
 
     /**
      * {@inheritdoc}
      */
-    public function __construct(Configuration $config, Application $application)
+    public function __construct(Configuration $config, ApplicationInterface $application)
     {
         try {
             $this->catalog_name     = $config->get('catalog_name');
@@ -143,9 +161,9 @@ class RDWSourceCatalog implements ISourceCatalog
     /**
      * Attempts to extract a potential dataset from a given array of data.
      *
-     * @param array $record The data from which to extract a dataset
+     * @param array<string, mixed> $record The data from which to extract a dataset
      *
-     * @return array The potential dataset
+     * @return array<string, mixed> The potential dataset
      */
     private function extractDataset(array $record): array
     {

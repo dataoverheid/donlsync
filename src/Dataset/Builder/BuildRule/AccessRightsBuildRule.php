@@ -3,7 +3,6 @@
 namespace DonlSync\Dataset\Builder\BuildRule;
 
 use DCAT_AP_DONL\DCATControlledVocabularyEntry;
-use DCAT_AP_DONL\DCATEntity;
 use DonlSync\Dataset\Builder\BuilderConfiguration;
 use DonlSync\Exception\DonlSyncRuntimeException;
 
@@ -14,17 +13,25 @@ use DonlSync\Exception\DonlSyncRuntimeException;
  */
 class AccessRightsBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
 {
-    /** @var string */
+    /**
+     * The vocabulary to use for access rights properties.
+     *
+     * @var string
+     */
     private const ACCESS_RIGHTS_VOCABULARY = 'Overheid:Openbaarheidsniveau';
 
-    /** @var array */
-    private $dcat_config;
+    /**
+     * The DCAT configuration data.
+     *
+     * @var array<string, mixed>
+     */
+    private array $dcat_config;
 
     /**
      * {@inheritdoc}
      *
      * @param BuilderConfiguration|null $config      The mapping configuration
-     * @param array                     $dcat_config The DCAT config to use
+     * @param array<string, mixed>      $dcat_config The DCAT config to use
      */
     public function __construct(string $property, string $prefix = 'Dataset',
                                 BuilderConfiguration $config = null, array $dcat_config = [])
@@ -48,8 +55,10 @@ class AccessRightsBuildRule extends AbstractDCATEntityBuildRule implements IDCAT
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATControlledVocabularyEntry|null The created DCATControlledVocabularyEntry
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATControlledVocabularyEntry
     {
         $license       = $data['license'];
         $access_rights = (in_array($license, $this->dcat_config['license']['closed']))
@@ -67,6 +76,8 @@ class AccessRightsBuildRule extends AbstractDCATEntityBuildRule implements IDCAT
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATControlledVocabularyEntry[] The created DCATControlledVocabularyEntries
      */
     public function buildMultiple(array &$data, array &$notices): array
     {

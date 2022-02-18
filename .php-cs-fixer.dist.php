@@ -3,18 +3,22 @@
 $finder = PhpCsFixer\Finder::create()
     ->in([
         __DIR__ . '/src',
+        __DIR__ . '/test',
     ]);
 
-return PhpCsFixer\Config::create()
+return (new PhpCsFixer\Config())
     ->setRules([
-        '@PSR2'                               => true,
+        '@PSR12'                              => true,
         '@Symfony'                            => true,
         'array_syntax'                        => [
             'syntax' => 'short'
         ],
         'binary_operator_spaces'              => [
-            'align_double_arrow'              => true,
-            'align_equals'                    => true,
+            'operators' => [
+                '*'  => 'align',
+                '='  => 'align',
+                '=>' => 'align',
+            ],
         ],
         'class_keyword_remove'                => false,
         'concat_space'                        => [
@@ -26,7 +30,9 @@ return PhpCsFixer\Config::create()
         ],
         'linebreak_after_opening_tag'         => true,
         'no_blank_lines_after_class_opening'  => false,
-        'no_short_echo_tag'                   => true,
+        'echo_tag_syntax'                     => [
+            'format' => 'long',
+        ],
         'no_useless_else'                     => true,
         'no_useless_return'                   => true,
         'not_operator_with_space'             => false,

@@ -2,7 +2,6 @@
 
 namespace DonlSync\Dataset\Builder\BuildRule;
 
-use DCAT_AP_DONL\DCATEntity;
 use DCAT_AP_DONL\DCATLegalFoundation;
 use DCAT_AP_DONL\DCATLiteral;
 use DCAT_AP_DONL\DCATURI;
@@ -18,8 +17,10 @@ class DCATLegalFoundationBuildRule extends AbstractDCATEntityBuildRule implement
 {
     /**
      * {@inheritdoc}
+     *
+     * @return DCATLegalFoundation|null The created DCATLegalFoundation
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATLegalFoundation
     {
         $label = ($this->createLiteralBuildRule('legal_foundation_label'))
             ->build($data, $notices);
@@ -28,7 +29,7 @@ class DCATLegalFoundationBuildRule extends AbstractDCATEntityBuildRule implement
         $ref   = ($this->createLiteralBuildRule('legal_foundation_ref'))
             ->build($data, $notices);
 
-        if (!$label || !$uri || !$ref) {
+        if (!$label && !$uri && !$ref) {
             return null;
         }
 
@@ -62,6 +63,8 @@ class DCATLegalFoundationBuildRule extends AbstractDCATEntityBuildRule implement
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATLegalFoundation[] The created DCATLegalFoundations
      */
     public function buildMultiple(array &$data, array &$notices): array
     {

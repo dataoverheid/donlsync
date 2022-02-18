@@ -2,25 +2,27 @@
 
 namespace DonlSync\Dataset\Builder\BuildRule;
 
-use DCAT_AP_DONL\DCATEntity;
-use DonlSync\Dataset\Builder\DatasetBuilder;
 use DonlSync\Dataset\DONLDistribution;
 use DonlSync\Dataset\Mapping\DefaultMapper;
 
 /**
- * Class DCATDistributionBuildRule.
+ * Class DONLDistributionBuildRule.
  *
- * Responsible for constructing a `\DCAT_AP_DONL\DCATDistribution` object.
+ * Responsible for constructing a `\DCAT_AP_DONL\DONLDistribution` object.
  *
- * @see \DCAT_AP_DONL\DCATDistribution
+ * @see \DCAT_AP_DONL\DONLDistribution
  */
-class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
+class DONLDistributionBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
 {
-    /** @var IDCATEntityBuildRule[] */
-    protected $custom_build_rules;
+    /**
+     * The custom build rules per field to use for said field.
+     *
+     * @var IDCATEntityBuildRule[]
+     */
+    protected array $custom_build_rules;
 
     /**
-     * [@inheritdoc}.
+     * {@inheritdoc}
      */
     public function __construct(string $property, string $prefix = 'Dataset')
     {
@@ -41,8 +43,10 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
 
     /**
      * {@inheritdoc}
+     *
+     * @return DONLDistribution|null The created DONLDistribution
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DONLDistribution
     {
         // single distribution builder not supported (yet?).
 
@@ -51,6 +55,8 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
 
     /**
      * {@inheritdoc}
+     *
+     * @return DONLDistribution[] The created DONLDistributions
      */
     public function buildMultiple(array &$data, array &$notices): array
     {
@@ -74,17 +80,22 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
                 $notices[] = '---';
             }
 
-            $index        = $i - 1;
+            $index = $i - 1;
+
+            $notices[] = sprintf('%s %s (%s)',
+                $this->prefix, $i, $data[$this->property][$index]['accessURL'] ?? 'n/a'
+            );
+
             $distribution = new DONLDistribution();
 
             $this->buildLiteral('title', $data[$this->property][$index], $distribution, $notices, $i);
             $this->buildLiteral('description', $data[$this->property][$index], $distribution, $notices, $i);
             $this->buildURI('accessURL', $data[$this->property][$index], $distribution, $notices, $i);
-            $this->buildURI('downloadURL', $data[$this->property][$index], $distribution, $notices, $i, DatasetBuilder::MULTI_VALUED);
+            $this->buildURI('downloadURL', $data[$this->property][$index], $distribution, $notices, $i, true);
             $this->buildControlledVocabularyEntry('distributionType', 'DONL:DistributionType', $data[$this->property][$index], $distribution, $notices, $i);
             $this->buildControlledVocabularyEntry('license', 'DONL:License', $data[$this->property][$index], $distribution, $notices, $i);
             $this->buildControlledVocabularyEntry('metadataLanguage', 'DONL:Language', $data[$this->property][$index], $distribution, $notices, $i);
-            $this->buildControlledVocabularyEntry('language', 'DONL:Language', $data[$this->property][$index], $distribution, $notices, $i, DatasetBuilder::MULTI_VALUED);
+            $this->buildControlledVocabularyEntry('language', 'DONL:Language', $data[$this->property][$index], $distribution, $notices, $i, true);
             $this->buildControlledVocabularyEntry('format', 'MDR:FiletypeNAL', $data[$this->property][$index], $distribution, $notices, $i);
             $this->buildControlledVocabularyEntry('mediaType', 'IANA:Mediatypes', $data[$this->property][$index], $distribution, $notices, $i);
             $this->buildLiteral('rights', $data[$this->property][$index], $distribution, $notices, $i);
@@ -92,8 +103,8 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
             $this->buildDateTime('releaseDate', $data[$this->property][$index], $distribution, $notices, $i);
             $this->buildDateTime('modificationDate', $data[$this->property][$index], $distribution, $notices, $i);
             $this->buildNumber('byteSize', $data[$this->property][$index], $distribution, $notices, $i);
-            $this->buildURI('linkedSchemas', $data[$this->property][$index], $distribution, $notices, $i, DatasetBuilder::MULTI_VALUED);
-            $this->buildURI('documentation', $data[$this->property][$index], $distribution, $notices, $i, DatasetBuilder::MULTI_VALUED);
+            $this->buildURI('linkedSchemas', $data[$this->property][$index], $distribution, $notices, $i, true);
+            $this->buildURI('documentation', $data[$this->property][$index], $distribution, $notices, $i, true);
             $this->buildChecksum('checksum', $data[$this->property][$index], $distribution, $notices, $i);
 
             $validation_result = $distribution->validate();
@@ -164,9 +175,9 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
     /**
      * Extracts the resource mappings from the catalog mappings.
      *
-     * @param array $mappings The mappings to extract the resource mappings from
+     * @param array<string, mixed> $mappings The mappings to extract the resource mappings from
      *
-     * @return array The settings for resources
+     * @return array<string, mixed> The settings for resources
      */
     private function extractResourceSettings(array $mappings): array
     {
@@ -184,23 +195,26 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
     /**
      * Attempts to build a DCATLiteral for the given property.
      *
-     * @param string           $property     The property to build
-     * @param array            $source_data  The harvested data from the catalog
-     * @param string           $build_rule   The fully qualified classname of the buildrule
-     * @param DONLDistribution $distribution The dataset being constructed
-     * @param string[]         $notices      The notices generated during execution so far
-     * @param string           $prefix       The logging prefix
-     * @param bool             $multi_valued How many elements to build for the property
+     * @param string               $property     The property to build
+     * @param array<string, mixed> $source_data  The harvested data from the catalog
+     * @param string               $build_rule   The fully qualified classname of the buildrule
+     * @param DONLDistribution     $distribution The dataset being constructed
+     * @param string[]             $notices      The notices generated during execution so far
+     * @param string               $prefix       The logging prefix
+     * @param bool                 $multi_valued How many elements to build for the property
+     * @param string|null          $vocabulary   The (optional) vocabulary to use
      */
     private function buildProperty(string $property, array &$source_data, string $build_rule,
                                    DONLDistribution &$distribution, array &$notices, string $prefix,
-                                   bool $multi_valued = false): void
+                                   bool $multi_valued = false, string $vocabulary = null): void
     {
         if (array_key_exists($property, $this->custom_build_rules)) {
             $build_rule = $this->custom_build_rules[$property];
             $build_rule->setPrefix($prefix);
         } else {
-            $build_rule = new $build_rule($property, $prefix);
+            $build_rule = empty($vocabulary)
+                ? new $build_rule($property, $prefix)
+                : new $build_rule($property, $prefix, $vocabulary);
         }
 
         $build_rule->setDefaults($this->defaults);
@@ -231,12 +245,12 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
     /**
      * Attempts to build a DCATLiteral for the given property.
      *
-     * @param string           $property     The property to build
-     * @param array            $source_data  The harvested data from the catalog
-     * @param DONLDistribution $distribution The dataset being constructed
-     * @param string[]         $notices      The notices generated during execution so far
-     * @param int              $iterator     The nth distribution being built
-     * @param bool             $multi_valued How many elements to build for the property
+     * @param string               $property     The property to build
+     * @param array<string, mixed> $source_data  The harvested data from the catalog
+     * @param DONLDistribution     $distribution The dataset being constructed
+     * @param string[]             $notices      The notices generated during execution so far
+     * @param int                  $iterator     The nth distribution being built
+     * @param bool                 $multi_valued How many elements to build for the property
      */
     private function buildLiteral(string $property, array &$source_data,
                                   DONLDistribution &$distribution, array &$notices, int $iterator,
@@ -251,12 +265,12 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
     /**
      * Attempts to build a DCATURI for the given property.
      *
-     * @param string           $property     The property to build
-     * @param array            $source_data  The harvested data from the catalog
-     * @param DONLDistribution $distribution The dataset being constructed
-     * @param string[]         $notices      The notices generated during execution so far
-     * @param int              $iterator     The nth distribution being built
-     * @param bool             $multi_valued How many elements to build for the property
+     * @param string               $property     The property to build
+     * @param array<string, mixed> $source_data  The harvested data from the catalog
+     * @param DONLDistribution     $distribution The dataset being constructed
+     * @param string[]             $notices      The notices generated during execution so far
+     * @param int                  $iterator     The nth distribution being built
+     * @param bool                 $multi_valued How many elements to build for the property
      */
     private function buildURI(string $property, array &$source_data,
                               DONLDistribution &$distribution, array &$notices, int $iterator,
@@ -271,12 +285,12 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
     /**
      * Attempts to build a DCATDateTime for the given property.
      *
-     * @param string           $property     The property to build
-     * @param array            $source_data  The harvested data from the catalog
-     * @param DONLDistribution $distribution The dataset being constructed
-     * @param string[]         $notices      The notices generated during execution so far
-     * @param int              $iterator     The nth distribution being built
-     * @param bool             $multi_valued How many elements to build for the property
+     * @param string               $property     The property to build
+     * @param array<string, mixed> $source_data  The harvested data from the catalog
+     * @param DONLDistribution     $distribution The dataset being constructed
+     * @param string[]             $notices      The notices generated during execution so far
+     * @param int                  $iterator     The nth distribution being built
+     * @param bool                 $multi_valued How many elements to build for the property
      */
     private function buildDateTime(string $property, array &$source_data,
                                    DONLDistribution &$distribution, array &$notices, int $iterator,
@@ -291,12 +305,12 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
     /**
      * Attempts to build a DCATNumber for the given property.
      *
-     * @param string           $property     The property to build
-     * @param array            $source_data  The harvested data from the catalog
-     * @param DONLDistribution $distribution The dataset being constructed
-     * @param string[]         $notices      The notices generated during execution so far
-     * @param int              $iterator     The nth distribution being built
-     * @param bool             $multi_valued How many elements to build for the property
+     * @param string               $property     The property to build
+     * @param array<string, mixed> $source_data  The harvested data from the catalog
+     * @param DONLDistribution     $distribution The dataset being constructed
+     * @param string[]             $notices      The notices generated during execution so far
+     * @param int                  $iterator     The nth distribution being built
+     * @param bool                 $multi_valued How many elements to build for the property
      */
     private function buildNumber(string $property, array &$source_data,
                                  DONLDistribution &$distribution, array &$notices, int $iterator,
@@ -311,13 +325,13 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
     /**
      * Attempts to build a DCATControlledVocabularyEntry for the given property.
      *
-     * @param string           $property     The property to build
-     * @param string           $vocabulary   The vocabulary of the property
-     * @param array            $source_data  The harvested data from the catalog
-     * @param DONLDistribution $distribution The dataset being constructed
-     * @param string[]         $notices      The notices generated during execution so far
-     * @param int              $iterator     The nth distribution being built
-     * @param bool             $multi_valued How many elements to build for the property
+     * @param string               $property     The property to build
+     * @param string               $vocabulary   The vocabulary of the property
+     * @param array<string, mixed> $source_data  The harvested data from the catalog
+     * @param DONLDistribution     $distribution The dataset being constructed
+     * @param string[]             $notices      The notices generated during execution so far
+     * @param int                  $iterator     The nth distribution being built
+     * @param bool                 $multi_valued How many elements to build for the property
      */
     private function buildControlledVocabularyEntry(string $property, string $vocabulary,
                                                     array &$source_data,
@@ -325,49 +339,22 @@ class DCATDistributionBuildRule extends AbstractDCATEntityBuildRule implements I
                                                     array &$notices, int $iterator,
                                                     bool $multi_valued = false): void
     {
-        if (array_key_exists($property, $this->custom_build_rules)) {
-            $build_rule = $this->custom_build_rules[$property];
-            $build_rule->setPrefix('Distribution ' . $iterator);
-        } else {
-            $build_rule = new DCATControlledVocabularyEntryBuildRule(
-                $property, 'Distribution ' . $iterator, $vocabulary
-            );
-        }
-
-        $build_rule->setDefaults($this->defaults);
-        $build_rule->setValueMappers($this->value_mappers);
-        $build_rule->setBlacklists($this->blacklists);
-        $build_rule->setWhitelists($this->whitelists);
-
-        if ($multi_valued) {
-            $entities = $build_rule->buildMultiple($source_data, $notices);
-
-            if (count($entities) > 0) {
-                $method = 'add' . ucfirst($property);
-
-                foreach ($entities as $entity) {
-                    $distribution->$method($entity);
-                }
-            }
-        } else {
-            $entity = $build_rule->build($source_data, $notices);
-
-            if (null !== $entity) {
-                $method = 'set' . ucfirst($property);
-                $distribution->$method($entity);
-            }
-        }
+        $this->buildProperty(
+            $property, $source_data, DCATControlledVocabularyEntryBuildRule::class,
+            $distribution, $notices, 'Distribution ' . $iterator, $multi_valued,
+            $vocabulary
+        );
     }
 
     /**
      * Attempts to build a DCATChecksum for the given property.
      *
-     * @param string           $property     The property to build
-     * @param array            $source_data  The harvested data from the catalog
-     * @param DONLDistribution $distribution The dataset being constructed
-     * @param string[]         $notices      The notices generated during execution so far
-     * @param int              $iterator     The nth distribution being built
-     * @param bool             $multi_valued How many elements to build for the property
+     * @param string               $property     The property to build
+     * @param array<string, mixed> $source_data  The harvested data from the catalog
+     * @param DONLDistribution     $distribution The dataset being constructed
+     * @param string[]             $notices      The notices generated during execution so far
+     * @param int                  $iterator     The nth distribution being built
+     * @param bool                 $multi_valued How many elements to build for the property
      */
     private function buildChecksum(string $property, array &$source_data,
                                    DONLDistribution &$distribution, array &$notices, int $iterator,

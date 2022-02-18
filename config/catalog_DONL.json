@@ -4,8 +4,7 @@
     "dataset": [
       "high_value",
       "basis_register",
-      "referentie_data",
-      "groups"
+      "referentie_data"
     ],
     "resource": [
       "link_status",

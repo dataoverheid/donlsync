@@ -3,7 +3,6 @@
 namespace DonlSync\Catalog\Source\ODataCatalog\BuildRule;
 
 use DCAT_AP_DONL\DCATControlledVocabularyEntry;
-use DCAT_AP_DONL\DCATEntity;
 use DCAT_AP_DONL\DCATException;
 use DonlSync\Dataset\Builder\BuilderConfiguration;
 use DonlSync\Dataset\Builder\BuildRule\AbstractDCATEntityBuildRule;
@@ -18,7 +17,11 @@ use DonlSync\Dataset\Builder\BuildRule\IDCATEntityBuildRule;
  */
 class ODataCatalogThemeBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
 {
-    /** @var string */
+    /**
+     * The vocabulary to use for the theme property.
+     *
+     * @var string
+     */
     private const VOCABULARY = 'Overheid:Taxonomiebeleidsagenda';
 
     /**
@@ -43,8 +46,10 @@ class ODataCatalogThemeBuildRule extends AbstractDCATEntityBuildRule implements 
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATControlledVocabularyEntry|null The created DCATControlledVocabularyEntry
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATControlledVocabularyEntry
     {
         // not supported
 
@@ -53,6 +58,8 @@ class ODataCatalogThemeBuildRule extends AbstractDCATEntityBuildRule implements 
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATControlledVocabularyEntry[] The created DCATControlledVocabularyEntries
      */
     public function buildMultiple(array &$data, array &$notices): array
     {

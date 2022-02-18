@@ -3,16 +3,17 @@
 namespace DonlSync\Command;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use DonlSync\Application;
+use DonlSync\ApplicationInterface;
 use DonlSync\Catalog\Source\ISourceCatalog;
 use DonlSync\Catalog\Target\ITargetCatalog;
 use DonlSync\Database\DatabaseAnalyzerBuilder;
 use DonlSync\Database\Repository\ExecutionMessageRepository as EMR;
 use DonlSync\Database\Repository\ProcessedDatasetsRepository as PDR;
+use DonlSync\Database\Repository\UnmappedValuesRepository;
 use DonlSync\Dataset\Builder\DatasetBuilderBuilder;
 use DonlSync\Dataset\DatasetContainer;
-use DonlSync\Dataset\DONLDistribution;
 use DonlSync\Exception\CatalogHarvestingException;
 use DonlSync\Exception\CatalogPublicationException;
 use DonlSync\Exception\DatabaseAnalyzerException;
@@ -69,7 +70,9 @@ class SynchronizeCatalogCommand extends Command
         $stopwatch     = $application->timer();
         $connection    = $application->database_connection();
 
-        $summarizer_file = Application::LOG_DIR . 'summary__' . $scheduled . '.json';
+        UnmappedValuesRepository::clearTable($connection);
+
+        $summarizer_file = ApplicationInterface::LOG_DIR . 'summary__' . $scheduled . '.json';
         $summarizer      = (empty($scheduled))
             ? new Summarizer()
             : Summarizer::fromFile($summarizer_file);
@@ -160,6 +163,16 @@ class SynchronizeCatalogCommand extends Command
 
         if ($scheduled) {
             $summarizer->writeToFile($summarizer_file, $source->getCatalogSlugName());
+
+            try {
+                UnmappedValuesRepository::recordsToFile(sprintf('%s/%s__unmapped__%s.log',
+                    ApplicationInterface::LOG_DIR,
+                    $catalog_slug,
+                    $scheduled
+                ));
+            } catch (\Doctrine\DBAL\Exception $e) {
+                // Fail silently.
+            }
         }
 
         return 0;
@@ -168,7 +181,7 @@ class SynchronizeCatalogCommand extends Command
     /**
      * Deletes all datasets from the target catalog which no longer exist on the source catalog.
      *
-     * @param array          $datasets    The datasets on the source catalog
+     * @param string[]       $datasets    The datasets on the source catalog
      * @param ISourceCatalog $catalog     The source catalog
      * @param ITargetCatalog $target      The target catalog
      * @param Summarizer     $summary     The execution summary so far
@@ -349,9 +362,9 @@ class SynchronizeCatalogCommand extends Command
      * Determines if a dataset already exists on the target catalog and assigns the given target
      * identifier if that is the case.
      *
-     * @param DatasetContainer $container      The dataset container to analyse
-     * @param array            $known_datasets All datasets from the source catalog published on the
-     *                                         target
+     * @param DatasetContainer  $container      The dataset container to analyse
+     * @param array<int, array> $known_datasets All datasets from the source catalog published on the
+     *                                          target
      */
     private function determineTargetIdentifierIfApplicable(DatasetContainer $container,
                                                            array $known_datasets): void
@@ -418,75 +431,53 @@ class SynchronizeCatalogCommand extends Command
     /**
      * Attempts to update a dataset on the target catalog, should an update be required.
      *
-     * @param DatasetContainer $dataset            The dataset to update
-     * @param array            $datasets_on_target The datasets on the target catalog
-     * @param ITargetCatalog   $catalog            The target catalog
-     * @param Summarizer       $summarizer         The execution summary so far
-     * @param OutputHelper     $helper             For writing to the output
-     * @param Connection       $connection         The database connection
-     * @param string[]         $credentials        The CKAN credentials
+     * @param DatasetContainer  $dataset            The dataset to update
+     * @param array<int, array> $datasets_on_target The datasets on the target catalog
+     * @param ITargetCatalog    $catalog            The target catalog
+     * @param Summarizer        $summarizer         The execution summary so far
+     * @param OutputHelper      $helper             For writing to the output
+     * @param Connection        $connection         The database connection
+     * @param string[]          $credentials        The CKAN credentials
      */
     private function updateDatasetRoutine(DatasetContainer $dataset, array $datasets_on_target,
                                           ITargetCatalog $catalog, Summarizer $summarizer,
                                           OutputHelper $helper, Connection $connection,
                                           array $credentials): void
     {
+        $dataset_on_database = null;
+        $dataset->generateHash();
+
+        foreach ($datasets_on_target as $target_dataset) {
+            $target_identifier = $target_dataset['target_identifier'];
+
+            if ($dataset->getTargetIdentifier() === $target_identifier) {
+                $dataset_on_database = $target_dataset;
+
+                break;
+            }
+        }
+
+        if ($dataset->getDatasetHash() === $dataset_on_database['dataset_hash']) {
+            $summarizer->incrementKey('ignored_datasets');
+            $helper->writeDatasetIgnored();
+
+            return;
+        }
+
         try {
-            $dataset_on_database = null;
-            $dataset_on_target   = null;
-            $dataset->generateHash();
-
-            foreach ($datasets_on_target as $target_dataset) {
-                $target_identifier = $target_dataset['target_identifier'];
-
-                if ($dataset->getTargetIdentifier() === $target_identifier) {
-                    $dataset_on_database = $target_dataset;
-                    $dataset_on_target   = $catalog->getDataset($target_identifier);
-
-                    break;
-                }
-            }
-
-            if ($dataset->getDatasetHash() === $dataset_on_database['dataset_hash']) {
-                $summarizer->incrementKey('ignored_datasets');
-                $helper->writeDatasetIgnored();
-
-                return;
-            }
-
-            foreach ($dataset->getDataset()->getDistributions() as $distribution) {
-                /* @var DONLDistribution $distribution */
-                foreach ($dataset_on_target['resources'] as $resource) {
-                    $title_match  = $distribution->getTitle()->getData() === $resource['name'];
-                    $link_match   = $distribution->getAccessURL()->getData() === $resource['url'];
-                    $format_match = $distribution->getFormat()->getData() === $resource['format'];
-
-                    if ($title_match && $link_match && $format_match) {
-                        $distribution->setId($resource['id']);
-                    }
-                }
-            }
-
-            try {
-                $dataset->setAssignedNumber($dataset_on_database['assigned_number']);
-                $catalog->updateDataset($dataset, $credentials);
-                PDR::updateRecord($connection, $dataset);
-                $helper->writeDatasetUpdated();
-                $summarizer->incrementKey('updated_datasets');
-            } catch (CatalogPublicationException $e) {
-                $summarizer->incrementKey('rejected_datasets');
-                $helper->writeDatasetUpdateRejected($e->getMessage());
-
-                $this->registerTargetRejection($e, $connection, $dataset);
-            } catch (DBALException $e) {
-                $summarizer->incrementKey('rejected_datasets');
-                $helper->writeDatasetUpdatedButNotTheDatabase($e->getMessage());
-
-                $this->registerTargetRejection($e, $connection, $dataset);
-            }
+            $dataset->setAssignedNumber($dataset_on_database['assigned_number']);
+            $catalog->updateDataset($dataset, $credentials);
+            PDR::updateRecord($connection, $dataset);
+            $helper->writeDatasetUpdated();
+            $summarizer->incrementKey('updated_datasets');
         } catch (CatalogPublicationException $e) {
             $summarizer->incrementKey('rejected_datasets');
-            $helper->writeDatasetUpdateComparisonRejected($e->getMessage());
+            $helper->writeDatasetUpdateRejected($e->getMessage());
+
+            $this->registerTargetRejection($e, $connection, $dataset);
+        } catch (DBALException $e) {
+            $summarizer->incrementKey('rejected_datasets');
+            $helper->writeDatasetUpdatedButNotTheDatabase($e->getMessage());
 
             $this->registerTargetRejection($e, $connection, $dataset);
         }

@@ -30,6 +30,7 @@ class NGRBuildRuleFactory
             'accessRights' => new AccessRightsBuildRule(
                 'accessRights', 'Dataset', $configuration, $dcat_config->all()
             ),
+            'spatial'      => new NGRSpatialBuildRule('spatial', 'Dataset'),
         ];
     }
 

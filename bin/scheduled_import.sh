@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-set -u
+set -eu
 
 cd "$(dirname "$0")/../"
 
@@ -16,7 +15,15 @@ if [ ! -e "${LOCK_FILE}" ]; then
     # shellcheck disable=SC2064
     trap "rm -f ${LOCK_FILE}" EXIT
 
-    declare -a catalogs=("CBS" "CBSDerden" "NGR" "NMGN" "RDW")
+    declare -a catalogs=(
+        "CBS"
+        "CBSDerden"
+        "Eindhoven"
+        "NGR"
+        "NMGN"
+        "RDW"
+        "SC"
+    )
 
     echo "{}" > "log/summary__${CURRENT_DATE}.json"
 

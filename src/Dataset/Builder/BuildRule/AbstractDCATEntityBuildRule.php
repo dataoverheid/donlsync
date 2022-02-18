@@ -2,6 +2,8 @@
 
 namespace DonlSync\Dataset\Builder\BuildRule;
 
+use Doctrine\DBAL\Exception;
+use DonlSync\Database\Repository\UnmappedValuesRepository;
 use DonlSync\Dataset\Mapping\BlacklistMapper;
 use DonlSync\Dataset\Mapping\DefaultMapper;
 use DonlSync\Dataset\Mapping\ValueMapper;
@@ -14,23 +16,42 @@ use DonlSync\Dataset\Mapping\WhitelistMapper;
  */
 abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
 {
-    /** @var string */
-    protected $property;
+    /**
+     * The property being built.
+     */
+    protected string $property;
 
-    /** @var string */
-    protected $prefix;
+    /**
+     * The prefix used for generating notices.
+     */
+    protected string $prefix;
 
-    /** @var DefaultMapper */
-    protected $defaults;
+    /**
+     * The mapping implementation for applying default values.
+     */
+    protected ?DefaultMapper $defaults;
 
-    /** @var ValueMapper[] */
-    protected $value_mappers;
+    /**
+     * The mapping implementations per field for transforming harvested values.
+     *
+     * @var ValueMapper[]
+     */
+    protected array $value_mappers;
 
-    /** @var BlacklistMapper[] */
-    protected $blacklists;
+    /**
+     * The mapping implementations per field for blocking the harvesting of certain metadata values.
+     *
+     * @var BlacklistMapper[]
+     */
+    protected array $blacklists;
 
-    /** @var WhitelistMapper[] */
-    protected $whitelists;
+    /**
+     * The mapping implementations per field for only allowing the harvesting of certain metadata
+     * values.
+     *
+     * @var WhitelistMapper[]
+     */
+    protected array $whitelists;
 
     /**
      * {@inheritdoc}
@@ -56,9 +77,9 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
     /**
      * Checks if a value is present in the harvested data or in the configured defaults.
      *
-     * @param string   $property The property holding the value
-     * @param array    $data     The data from which to construct a DCATEntity
-     * @param string[] $notices  The notices generated so far
+     * @param string               $property The property holding the value
+     * @param array<string, mixed> $data     The data from which to construct a DCATEntity
+     * @param string[]             $notices  The notices generated so far
      *
      * @return bool Whether or not a value is present to process
      */
@@ -82,9 +103,9 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
      * Checks if a (multi valued) value is present in the harvested data or in the configured
      * defaults.
      *
-     * @param string   $property The property holding the value
-     * @param array    $data     The data from which to construct a DCATEntity
-     * @param string[] $notices  The notices generated so far
+     * @param string               $property The property holding the value
+     * @param array<string, mixed> $data     The data from which to construct a DCATEntity
+     * @param string[]             $notices  The notices generated so far
      *
      * @return bool Whether or not a value is present to process
      */
@@ -107,13 +128,13 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
     /**
      * Checks if a given value is blacklisted.
      *
-     * @param string   $property The property holding the value
-     * @param array    $data     The data from which to construct a DCATEntity
-     * @param string[] $notices  The notices generated so far
+     * @param string               $property The property holding the value
+     * @param array<string, mixed> $data     The data from which to construct a DCATEntity
+     * @param string[]             $notices  The notices generated so far
      *
      * @return bool Whether or not a value is blacklisted
      */
-    public function valueIsBlacklisted(string $property, array &$data, &$notices): bool
+    public function valueIsBlacklisted(string $property, array $data, array &$notices): bool
     {
         if (array_key_exists($property, $this->blacklists)) {
             if ($this->blacklists[$property]->isBlacklisted($data[$property])) {
@@ -131,14 +152,14 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
     /**
      * Checks if a given value is blacklisted.
      *
-     * @param string   $property The property holding the value
-     * @param array    $data     The data from which to construct a DCATEntity
-     * @param string[] $notices  The notices generated so far
-     * @param int      $index    The index holding the value to check
+     * @param string               $property The property holding the value
+     * @param array<string, mixed> $data     The data from which to construct a DCATEntity
+     * @param string[]             $notices  The notices generated so far
+     * @param int                  $index    The index holding the value to check
      *
      * @return bool Whether or not a value is blacklisted
      */
-    public function multiValuedValueIsBlacklisted(string $property, array &$data, array &$notices,
+    public function multiValuedValueIsBlacklisted(string $property, array $data, array &$notices,
                                                   int $index): bool
     {
         if (array_key_exists($property, $this->blacklists)) {
@@ -157,13 +178,13 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
     /**
      * Checks if a given value is whitelisted.
      *
-     * @param string   $property The property holding the value
-     * @param array    $data     The data from which to construct a DCATEntity
-     * @param string[] $notices  The notices generated so far
+     * @param string               $property The property holding the value
+     * @param array<string, mixed> $data     The data from which to construct a DCATEntity
+     * @param string[]             $notices  The notices generated so far
      *
      * @return bool Whether or not a value is whitelisted
      */
-    public function valueIsWhitelisted(string $property, array &$data, array &$notices): bool
+    public function valueIsWhitelisted(string $property, array $data, array &$notices): bool
     {
         if (array_key_exists($property, $this->whitelists)) {
             if (!$this->whitelists[$property]->inWhitelist($data[$property])) {
@@ -181,14 +202,14 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
     /**
      * Checks if a given value is whitelisted.
      *
-     * @param string   $property The property holding the value
-     * @param array    $data     The data from which to construct a DCATEntity
-     * @param string[] $notices  The notices generated so far
-     * @param int      $index    The index holding the value to check
+     * @param string               $property The property holding the value
+     * @param array<string, mixed> $data     The data from which to construct a DCATEntity
+     * @param string[]             $notices  The notices generated so far
+     * @param int                  $index    The index holding the value to check
      *
      * @return bool Whether or not a value is whitelisted
      */
-    public function multiValuedValueIsWhitelisted(string $property, array &$data, array &$notices,
+    public function multiValuedValueIsWhitelisted(string $property, array $data, array &$notices,
                                                   int $index): bool
     {
         if (array_key_exists($property, $this->whitelists)) {
@@ -208,9 +229,9 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
      * If a mapping is defined for a given value, that mapping is applied to that value. No action
      * is taken otherwise.
      *
-     * @param string   $property The property holding the value
-     * @param array    $data     The data from which to construct a DCATEntity
-     * @param string[] $notices  The notices generated so far
+     * @param string               $property The property holding the value
+     * @param array<string, mixed> $data     The data from which to construct a DCATEntity
+     * @param string[]             $notices  The notices generated so far
      */
     public function applyValueMapping(string $property, array &$data, array &$notices): void
     {
@@ -230,10 +251,10 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
      * If a mapping is defined for a given value, that mapping is applied to that value. No action
      * is taken otherwise.
      *
-     * @param string   $property The property holding the value
-     * @param array    $data     The data from which to construct a DCATEntity
-     * @param string[] $notices  The notices generated so far
-     * @param int      $index    The index holding the value to check
+     * @param string               $property The property holding the value
+     * @param array<string, mixed> $data     The data from which to construct a DCATEntity
+     * @param string[]             $notices  The notices generated so far
+     * @param int                  $index    The index holding the value to check
      */
     public function applyMultiValuedValueMapping(string $property, array &$data, array &$notices,
                                                  int $index): void
@@ -256,38 +277,6 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
     public function getProperty(): string
     {
         return $this->property;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getDefaults(): DefaultMapper
-    {
-        return $this->defaults;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getValueMappers(): array
-    {
-        return $this->value_mappers;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getBlacklists(): array
-    {
-        return $this->blacklists;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getWhitelists(): array
-    {
-        return $this->whitelists;
     }
 
     /**
@@ -320,6 +309,73 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
     public function setWhitelists(array $mappers): void
     {
         $this->whitelists = $mappers;
+    }
+
+    /**
+     * Attempts to create a single DCATEntity based on the given data and the configured Mapping
+     * implementations. May return `null` if no DCATEntity can be constructed.
+     *
+     * @param array<mixed, mixed> $data         The data harvested from the catalog
+     * @param string[]            $notices      The notices generated during the dataset building
+     *                                          process
+     * @param string              $entity_class The DCATEntity to create
+     *
+     * @return mixed|null The created DCATEntity, or null if one could not be created
+     */
+    protected function buildSingleProperty(array &$data, array &$notices, string $entity_class)
+    {
+        if (!$this->valueIsPresent($this->property, $data, $notices)) {
+            return null;
+        }
+
+        if ($this->valueIsBlacklisted($this->property, $data, $notices)) {
+            return null;
+        }
+
+        if (!$this->valueIsWhitelisted($this->property, $data, $notices)) {
+            return null;
+        }
+
+        $original_value = $data[$this->property];
+
+        $this->applyValueMapping($this->property, $data, $notices);
+
+        $dcat_entity = new $entity_class($data[$this->property]);
+
+        if (!$dcat_entity->validate()->validated()) {
+            $notices[] = sprintf('%s: %s: value %s is not valid, discarding',
+                $this->prefix, ucfirst($this->property), $dcat_entity->getData()
+            );
+
+            $this->conditionallyRegisterMissingMapping($original_value, $data[$this->property]);
+
+            return null;
+        }
+
+        return $dcat_entity;
+    }
+
+    /**
+     * Register a record in the database detailing that a harvested value was not mapped, but should
+     * and/or could have been. The record is only registered if the original value is equal to the
+     * value after applying all the mappings.
+     *
+     * @param mixed $originalValue The original harvested value
+     * @param mixed $currentValue  The value after applying all mappings
+     */
+    protected function conditionallyRegisterMissingMapping($originalValue, $currentValue): void
+    {
+        if ($originalValue === $currentValue) {
+            try {
+                UnmappedValuesRepository::insertRecord([
+                    'object'    => explode(' ', $this->prefix)[0],
+                    'attribute' => $this->property,
+                    'value'     => $originalValue,
+                ]);
+            } catch (Exception $e) {
+                // Fail silently.
+            }
+        }
     }
 
     /**
@@ -379,9 +435,9 @@ abstract class AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
     /**
      * Removes any duplicates from the given array.
      *
-     * @param array $multi_valued_entity The array which may contain duplicate values
+     * @param array<mixed, mixed> $multi_valued_entity The array which may contain duplicate values
      *
-     * @return array The original array, without the duplicate values
+     * @return array<mixed, mixed> The original array, without the duplicate values
      */
     protected function stripDuplicates(array $multi_valued_entity): array
     {

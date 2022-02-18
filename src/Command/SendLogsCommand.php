@@ -3,7 +3,7 @@
 namespace DonlSync\Command;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use DonlSync\Application;
 use DonlSync\Catalog\Target\ITargetCatalog;
 use DonlSync\Configuration;
@@ -106,6 +106,7 @@ class SendLogsCommand extends Command
         $files  = $finder->in(Application::LOG_DIR)->files()->depth('== 0')->name([
             '*__import__' . $date . '.log',
             '*__analysis__' . $date . '.log',
+            '*__unmapped__' . $date . '.log',
         ]);
 
         return iterator_to_array($files);
@@ -139,7 +140,7 @@ class SendLogsCommand extends Command
      * @param Connection $connection The active database connection
      * @param string     $date       The date to identify the alerts by
      *
-     * @return string[] The generated alerts
+     * @return array<int, array> The generated alerts
      */
     private function loadImportAlerts(Connection $connection, string $date): array
     {
@@ -205,6 +206,7 @@ class SendLogsCommand extends Command
             try {
                 $client->addAddress($recipient['email'], $recipient['name']);
             } catch (PHPMailerException $e) {
+                throw new DonlSyncRuntimeException('Failed to add recipient', 0, $e);
             }
         }
     }
@@ -226,13 +228,13 @@ class SendLogsCommand extends Command
     /**
      * Renders the body of the summary email that will be sent.
      *
-     * @param PHPMailer      $client  The mail client sending the email
-     * @param Blade          $blade   The blade engine used to render the template
-     * @param int[]          $summary The dataset summary
-     * @param string[]       $alerts  Any alerts generated during the import process
-     * @param string         $date    The date being processed
-     * @param string         $version The version of the application
-     * @param ITargetCatalog $target  The catalog to which the datasets were sent
+     * @param PHPMailer         $client  The mail client sending the email
+     * @param Blade             $blade   The blade engine used to render the template
+     * @param int[]             $summary The dataset summary
+     * @param array<int, array> $alerts  Any alerts generated during the import process
+     * @param string            $date    The date being processed
+     * @param string            $version The version of the application
+     * @param ITargetCatalog    $target  The catalog to which the datasets were sent
      */
     private function generateEmailBody(PHPMailer $client, Blade $blade, array $summary,
                                        array $alerts, string $date, string $version,
@@ -248,6 +250,6 @@ class SendLogsCommand extends Command
             'email_source' => $client->From,
             'version'      => $version,
             'environment'  => $_ENV['APPLICATION_ENVIRONMENT'],
-        ]);
+        ])->render();
     }
 }

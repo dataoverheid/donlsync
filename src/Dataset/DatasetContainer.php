@@ -11,26 +11,44 @@ use DCAT_AP_DONL\DCATDataset;
  */
 class DatasetContainer
 {
-    /** @var string|null */
-    private $catalog_name;
+    /**
+     * The source catalog from which the containerized dataset originates.
+     */
+    private ?string $catalog_name;
 
-    /** @var string|null */
-    private $catalog_identifier;
+    /**
+     * The ID of the dataset as it exists in the source catalog.
+     */
+    private ?string $catalog_identifier;
 
-    /** @var string|null */
-    private $target_identifier;
+    /**
+     * The CKAN ID of the dataset as it exists on the target catalog.
+     */
+    private ?string $target_identifier;
 
-    /** @var DCATDataset|null */
-    private $dataset;
+    /**
+     * The dataset being wrapped by this container.
+     */
+    private ?DCATDataset $dataset;
 
-    /** @var string|null */
-    private $dataset_hash;
+    /**
+     * The MD5 checksum of the dataset used to determine if a existing dataset should be updated on
+     * the target catalog.
+     */
+    private ?string $dataset_hash;
 
-    /** @var int|null */
-    private $assigned_number;
+    /**
+     * The number assigned to the dataset to ensure that a unique CKAN name can be generated for the
+     * dataset.
+     */
+    private ?int $assigned_number;
 
-    /** @var string[] */
-    private $conversion_notices;
+    /**
+     * The list of notices generated during the conversion.
+     *
+     * @var string[]
+     */
+    private array $conversion_notices;
 
     /**
      * DatasetContainer constructor.

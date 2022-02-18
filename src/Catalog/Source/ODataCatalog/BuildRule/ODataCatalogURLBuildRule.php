@@ -2,7 +2,6 @@
 
 namespace DonlSync\Catalog\Source\ODataCatalog\BuildRule;
 
-use DCAT_AP_DONL\DCATEntity;
 use DCAT_AP_DONL\DCATURI;
 use DonlSync\Dataset\Builder\BuilderConfiguration;
 use DonlSync\Dataset\Builder\BuildRule\AbstractDCATEntityBuildRule;
@@ -15,11 +14,17 @@ use DonlSync\Dataset\Builder\BuildRule\IDCATEntityBuildRule;
  */
 abstract class ODataCatalogURLBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
 {
-    /** @var string[] */
-    protected $required_fields;
+    /**
+     * The fields required for constructing the URL property.
+     *
+     * @var string[]
+     */
+    protected array $required_fields;
 
-    /** @var string */
-    protected $field;
+    /**
+     * The field containing the metadata from which to construct the property.
+     */
+    protected string $field;
 
     /**
      * {@inheritdoc}
@@ -43,8 +48,10 @@ abstract class ODataCatalogURLBuildRule extends AbstractDCATEntityBuildRule impl
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATURI|null The created DCATURI
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATURI
     {
         foreach ($this->required_fields as $key) {
             if (!array_key_exists($key, $data)) {
@@ -78,6 +85,8 @@ abstract class ODataCatalogURLBuildRule extends AbstractDCATEntityBuildRule impl
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATURI[] The created DCATURI's
      */
     public function buildMultiple(array &$data, array &$notices): array
     {

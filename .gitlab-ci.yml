@@ -1,0 +1,91 @@
+include:
+  - project: 'continuous-integration/gitlab'
+    ref: master
+    file:
+      - '/docker/base.yml'
+      - '/php/composer.yml'
+      - '/php/php-cs-fixer.yml'
+      - '/php/phpcpd.yml'
+      - '/php/phpstan.yml'
+      - '/php/phpunit.yml'
+      - '/php/security-checker.yml'
+
+
+variables:
+  PHP_IMAGE: containers.textinfo.nl/php/docker:8.0-ci
+
+
+.ci-rules:
+  rules:
+    - if: '$CI_SERVER_HOST == "gitlab.textinfo.nl" && $CI_COMMIT_BRANCH == "master"'
+      when: on_success
+      allow_failure: false
+    - if: '$CI_SERVER_HOST == "gitlab.textinfo.nl" && $CI_PIPELINE_SOURCE  == "merge_request_event"'
+      when: on_success
+      allow_failure: false
+
+
+stages:
+  - build
+  - test
+  - security
+  - analysis
+  - publish
+
+
+composer:
+  extends:
+    - .composer-dev
+    - .ci-rules
+  stage: build
+
+
+phpunit:
+  extends:
+    - .phpunit
+    - .ci-rules
+  stage: test
+
+
+security-checker:
+  extends:
+    - .security-checker
+    - .ci-rules
+  stage: security
+
+
+phpcpd:
+  extends:
+    - .phpcpd
+    - .ci-rules
+  stage: analysis
+
+
+phpstan:
+  extends:
+    - .phpstan
+    - .ci-rules
+  stage: analysis
+
+
+php-cs-fixer:
+  extends:
+    - .php-cs-fixer
+    - .ci-rules
+  stage: analysis
+
+
+docker image:
+  variables:
+    DOCKER_IMAGE: "docker:git"
+  extends:
+    - .docker-base
+  stage: publish
+  rules:
+    - if: '$CI_SERVER_HOST == "gitlab.textinfo.nl" && $CI_COMMIT_BRANCH == "master"'
+      when: on_success
+      allow_failure: false
+  script:
+    - git rev-parse --short HEAD > ./CHECKSUM
+    - docker build --pull --tag "$CI_REGISTRY_IMAGE:$(cat ./VERSION)" --rm ./
+    - docker push "$CI_REGISTRY_IMAGE:$(cat ./VERSION)"

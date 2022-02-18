@@ -2,7 +2,7 @@
 
 namespace DonlSync\Catalog\Target\DONL;
 
-use DonlSync\Application;
+use DonlSync\ApplicationInterface;
 use DonlSync\Catalog\Target\ITargetCatalog;
 use DonlSync\Configuration;
 use DonlSync\Dataset\DatasetContainer;
@@ -21,28 +21,44 @@ use GuzzleHttp\Exception\RequestException;
  */
 class DONLTargetCatalog implements ITargetCatalog
 {
-    /** @var string */
-    private $catalog_name;
+    /**
+     * The name of the catalog.
+     */
+    private string $catalog_name;
 
-    /** @var string */
-    private $catalog_endpoint;
+    /**
+     * The URL of the catalog.
+     */
+    private string $catalog_endpoint;
 
-    /** @var Client */
-    private $api_client;
+    /**
+     * The Guzzle client for interacting with the catalog API.
+     */
+    private Client $api_client;
 
-    /** @var string[] */
-    private $persistent_properties;
+    /**
+     * The list of properties, per object, which should not be touched by this application when
+     * updating a dataset on the target catalog.
+     *
+     * @var array<string, array>
+     */
+    private array $persistent_properties;
 
-    /** @var Configuration */
-    private $ckan_config;
+    /**
+     * The CKAN configuration data.
+     */
+    private Configuration $ckan_config;
 
-    /** @var DatasetTransformer */
-    private $dataset_transformer;
+    /**
+     * The transformer responsible for transforming the DCAT objects into valid CKAN objects so that
+     * they can be send to the CKAN API.
+     */
+    private DatasetTransformer $dataset_transformer;
 
     /**
      * {@inheritdoc}
      */
-    public function __construct(Configuration $config, Application $application)
+    public function __construct(Configuration $config, ApplicationInterface $application)
     {
         try {
             $this->catalog_name          = $config->get('catalog_name');
@@ -55,7 +71,7 @@ class DONLTargetCatalog implements ITargetCatalog
             );
         } catch (ConfigurationException $e) {
             throw new CatalogInitializationException(
-                'Missing configuration key; ' . $e->getMessage(), 0, $e
+                $e->getMessage(), 0, $e
             );
         }
     }
@@ -89,15 +105,7 @@ class DONLTargetCatalog implements ITargetCatalog
      */
     public function getData(array $credentials = []): array
     {
-        $keys = ['owner_org', 'user_id', 'api_key'];
-
-        foreach ($keys as $key) {
-            if (!array_key_exists($key, $credentials)) {
-                throw new CatalogHarvestingException(
-                    'missing required configuration [ ' . $key . ' ] to harvest catalog'
-                );
-            }
-        }
+        Configuration::checkKeys($credentials, ITargetCatalog::CREDENTIAL_KEYS);
 
         $objects = [];
         $offset  = 0;
@@ -147,10 +155,14 @@ class DONLTargetCatalog implements ITargetCatalog
      */
     public function publishDataset(DatasetContainer $container, array $credentials): string
     {
+        Configuration::checkKeys($credentials, ITargetCatalog::CREDENTIAL_KEYS);
+
         try {
-            $dataset              = $this->dataset_transformer->transform($container->getDataset());
-            $dataset['owner_org'] = $credentials['owner_org'];
-            $dataset['name']      = $this->generateName(
+            $dataset = $this->dataset_transformer->transform($container->getDataset());
+
+            $dataset['donlsync_checksum'] = $container->getDatasetHash();
+            $dataset['owner_org']         = $credentials['owner_org'];
+            $dataset['name']              = $this->generateName(
                 $container->getAssignedNumber(),
                 $container->getDataset()->getTitle()->getData()
             );
@@ -173,7 +185,12 @@ class DONLTargetCatalog implements ITargetCatalog
             }
 
             return $data['result']['id'];
-        } catch (RequestException | ConfigurationException $e) {
+        } catch (RequestException $e) {
+            throw new CatalogPublicationException($e->hasResponse()
+                ? $e->getResponse()->getBody()->getContents()
+                : $e->getMessage()
+            );
+        } catch (ConfigurationException $e) {
             throw new CatalogPublicationException($e->getMessage());
         }
     }
@@ -185,17 +202,24 @@ class DONLTargetCatalog implements ITargetCatalog
      */
     public function updateDataset(DatasetContainer $container, array $credentials): void
     {
-        try {
-            $dataset       = $this->dataset_transformer->transform($container->getDataset());
-            $dataset['id'] = $container->getTargetIdentifier();
+        Configuration::checkKeys($credentials, ITargetCatalog::CREDENTIAL_KEYS);
 
-            $this->persistProperties($dataset, $container->getTargetIdentifier());
+        try {
+            $dataset = $this->dataset_transformer->transform($container->getDataset());
+
+            $dataset['donlsync_checksum'] = $container->getDatasetHash();
+            $dataset['id']                = $container->getTargetIdentifier();
+
+            // TODO:
+            // Disabled feature until analysis reveals why certain resources are omitted from the
+            // dataset object prior to it being sent to the CKAN installation.
+            //$this->persistProperties($dataset, $container->getTargetIdentifier());
 
             $response = $this->api_client->post('api/3/action/package_update', [
                 'headers' => ['Authorization' => $credentials['api_key']],
                 'json'    => $dataset,
             ]);
-            $response = json_decode($response->getBody(), true);
+            $response = json_decode($response->getBody()->getContents(), true);
 
             if (null === $response) {
                 throw new CatalogPublicationException(
@@ -207,7 +231,10 @@ class DONLTargetCatalog implements ITargetCatalog
                 throw new CatalogPublicationException($response['error']['message']);
             }
         } catch (RequestException $e) {
-            throw new CatalogPublicationException($e->getMessage());
+            throw new CatalogPublicationException($e->hasResponse()
+                ? $e->getResponse()->getBody()->getContents()
+                : $e->getMessage()
+            );
         }
     }
 
@@ -219,6 +246,8 @@ class DONLTargetCatalog implements ITargetCatalog
      */
     public function deleteDataset(string $id, array $credentials): void
     {
+        Configuration::checkKeys($credentials, ITargetCatalog::CREDENTIAL_KEYS);
+
         try {
             $response = $this->api_client->post('api/3/action/dataset_purge', [
                 'headers' => ['Authorization' => $credentials['api_key']],
@@ -236,7 +265,10 @@ class DONLTargetCatalog implements ITargetCatalog
                 throw new CatalogPublicationException($response['error']['message']);
             }
         } catch (RequestException $e) {
-            throw new CatalogPublicationException($e->getMessage());
+            throw new CatalogPublicationException($e->hasResponse()
+                ? $e->getResponse()->getBody()->getContents()
+                : $e->getMessage()
+            );
         }
     }
 
@@ -244,7 +276,7 @@ class DONLTargetCatalog implements ITargetCatalog
      * {@inheritdoc}
      *
      * Performs an `api/3/action/package_show` API call to CKAN to request the dataset with the
-     * given id.It returns the contents of the JSON key 'result' which should be present in the
+     * given id. It returns the contents of the JSON key 'result' which should be present in the
      * response of the mentioned API call.
      */
     public function getDataset(string $id): array
@@ -267,7 +299,10 @@ class DONLTargetCatalog implements ITargetCatalog
 
             return $response['result'];
         } catch (RequestException $e) {
-            throw new CatalogPublicationException($e->getMessage());
+            throw new CatalogPublicationException($e->hasResponse()
+                ? $e->getResponse()->getBody()->getContents()
+                : $e->getMessage()
+            );
         }
     }
 
@@ -301,8 +336,8 @@ class DONLTargetCatalog implements ITargetCatalog
      * Persists certain configurable properties for a given dataset. This means that the properties
      * which are defined as "persistent" will not be modified by the DonlSync application.
      *
-     * @param array  $dataset           The dataset for which properties must be persisted
-     * @param string $target_identifier The identifier of the dataset on the target catalog
+     * @param array<string, mixed> $dataset           The dataset for which properties must be persisted
+     * @param string               $target_identifier The identifier of the dataset on the target catalog
      *
      * @throws CatalogPublicationException Thrown if the dataset could not be retrieved from the
      *                                     target catalog
@@ -318,16 +353,36 @@ class DONLTargetCatalog implements ITargetCatalog
                 }
             }
 
+            if (empty($dataset['resources'])) {
+                return;
+            }
+
+            foreach ($dataset['resources'] as &$resource) {
+                if (!array_key_exists('name', $resource)) {
+                    continue;
+                }
+
+                foreach ($current_dataset['resources'] as $current_resource) {
+                    $title_match  = $current_resource['name'] === $resource['name'];
+                    $link_match   = $current_resource['url'] === $resource['url'];
+                    $format_match = $current_resource['format'] === $resource['format'];
+
+                    if ($title_match && $link_match && $format_match) {
+                        $resource['id'] = $current_resource['id'];
+                    }
+                }
+            }
+
             foreach ($this->persistent_properties['resource'] as $persistent_prop) {
-                foreach ($current_dataset['resources'] as $resource) {
+                foreach ($current_dataset['resources'] as $current_resource) {
                     foreach ($dataset['resources'] as &$dataset_resource) {
                         if (!array_key_exists('id', $dataset_resource)) {
                             continue;
                         }
 
-                        if ($dataset_resource['id'] === $resource['id']) {
-                            if (array_key_exists($persistent_prop, $resource)) {
-                                $dataset_resource[$persistent_prop] = $resource[$persistent_prop];
+                        if ($dataset_resource['id'] === $current_resource['id']) {
+                            if (array_key_exists($persistent_prop, $current_resource)) {
+                                $dataset_resource[$persistent_prop] = $current_resource[$persistent_prop];
                             }
                         }
                     }
@@ -335,9 +390,7 @@ class DONLTargetCatalog implements ITargetCatalog
             }
         } catch (CatalogPublicationException $e) {
             throw new CatalogPublicationException(
-                'Unable to persist properties; failed to retrieve dataset from the catalog',
-                1,
-                $e
+                'Unable to persist properties; failed to retrieve dataset from catalog', 1, $e
             );
         }
     }

@@ -2,7 +2,6 @@
 
 namespace DonlSync\Dataset\Builder\BuildRule;
 
-use DCAT_AP_DONL\DCATEntity;
 use DCAT_AP_DONL\DCATURI;
 
 /**
@@ -16,38 +15,18 @@ class DCATURIBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntit
 {
     /**
      * {@inheritdoc}
+     *
+     * @return DCATURI|null The created DCATURI
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATURI
     {
-        if (!$this->valueIsPresent($this->property, $data, $notices)) {
-            return null;
-        }
-
-        if ($this->valueIsBlacklisted($this->property, $data, $notices)) {
-            return null;
-        }
-
-        if (!$this->valueIsWhitelisted($this->property, $data, $notices)) {
-            return null;
-        }
-
-        $this->applyValueMapping($this->property, $data, $notices);
-
-        $dcat_uri = new DCATURI($data[$this->property]);
-
-        if (!$dcat_uri->validate()->validated()) {
-            $notices[] = sprintf('%s: %s: value %s is not valid, discarding',
-                $this->prefix, ucfirst($this->property), $dcat_uri->getData()
-            );
-
-            return null;
-        }
-
-        return $dcat_uri;
+        return $this->buildSingleProperty($data, $notices, DCATURI::class);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATURI[] The created DCATURI's
      */
     public function buildMultiple(array &$data, array &$notices): array
     {
@@ -66,6 +45,8 @@ class DCATURIBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntit
                 continue;
             }
 
+            $original_value = $data[$this->property][$i];
+
             $this->applyMultiValuedValueMapping($this->property, $data, $notices, $i);
 
             $dcat_uri = new DCATURI($data[$this->property][$i]);
@@ -74,6 +55,8 @@ class DCATURIBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntit
                 $notices[] = sprintf('%s: %s: value %s is not valid, discarding',
                     $this->prefix, ucfirst($this->property), $dcat_uri->getData()
                 );
+
+                $this->conditionallyRegisterMissingMapping($original_value, $data[$this->property][$i]);
 
                 continue;
             }

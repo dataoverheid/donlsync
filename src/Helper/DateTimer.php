@@ -5,6 +5,8 @@ namespace DonlSync\Helper;
 use DateInterval;
 use DateTime;
 use DateTimeZone;
+use DonlSync\Configuration;
+use DonlSync\Exception\DonlSyncRuntimeException;
 use Exception;
 
 /**
@@ -14,27 +16,53 @@ use Exception;
  */
 class DateTimer
 {
-    /** @var array */
-    protected $date_config;
+    /**
+     * A string representation of the current datetime.
+     */
+    public static string $NOW_STRING = 'now';
 
-    /** @var DateTimeZone */
-    protected $timezone;
+    /**
+     * The configuration data for datetime related operations.
+     *
+     * @var array<string, mixed>
+     */
+    protected array $date_config;
 
-    /** @var DateTime */
-    protected $started;
+    /**
+     * The timezone to use for all \DateTime related operations.
+     */
+    protected DateTimeZone $timezone;
 
-    /** @var DateTime */
-    protected $ended;
+    /**
+     * The moment in time the timer was started. Will be initiated on the first request to
+     * DateTimer::start().
+     */
+    protected ?DateTime $started;
+
+    /**
+     * The moment in time the timer ended. Will be initiated on the first request to
+     * DateTimer::end().
+     */
+    protected ?DateTime $ended;
 
     /**
      * DateTimer constructor.
      *
-     * @param array $date_config The date configuration to use
+     * @param string[] $date_config The date configuration to use
      */
     public function __construct(array $date_config)
     {
+        Configuration::checkKeys($date_config, ['timezone', 'format', 'duration_format']);
+
         $this->date_config = $date_config;
-        $this->timezone    = new DateTimeZone($this->date_config['timezone']);
+        $this->started     = null;
+        $this->ended       = null;
+
+        try {
+            $this->timezone = new DateTimeZone($this->date_config['timezone']);
+        } catch (Exception $e) {
+            throw new DonlSyncRuntimeException($e->getMessage(), 0, $e);
+        }
     }
 
     /**
@@ -43,8 +71,9 @@ class DateTimer
     public function start(): void
     {
         try {
-            $this->started = new DateTime('now', $this->timezone);
+            $this->started = new DateTime(self::$NOW_STRING, $this->timezone);
         } catch (Exception $e) {
+            throw new DonlSyncRuntimeException($e->getMessage());
         }
     }
 
@@ -53,9 +82,14 @@ class DateTimer
      */
     public function end(): void
     {
+        if (null === $this->started) {
+            throw new DonlSyncRuntimeException('Cannot end timer that has not been started.');
+        }
+
         try {
-            $this->ended = new DateTime('now', $this->timezone);
+            $this->ended = new DateTime(self::$NOW_STRING, $this->timezone);
         } catch (Exception $e) {
+            throw new DonlSyncRuntimeException($e->getMessage());
         }
     }
 
@@ -88,9 +122,9 @@ class DateTimer
     /**
      * Getter for the started property.
      *
-     * @return DateTime The started property
+     * @return DateTime|null The started property
      */
-    public function getStartTime(): DateTime
+    public function getStartTime(): ?DateTime
     {
         return $this->started;
     }
@@ -114,9 +148,9 @@ class DateTimer
     /**
      * Getter for the ended property.
      *
-     * @return DateTime The ended property
+     * @return DateTime|null The ended property
      */
-    public function getEndTime(): DateTime
+    public function getEndTime(): ?DateTime
     {
         return $this->ended;
     }

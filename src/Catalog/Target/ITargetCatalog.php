@@ -10,10 +10,17 @@ use DonlSync\Exception\CatalogPublicationException;
 /**
  * Interface ITargetCatalog.
  *
- * Represents a catalog webapplication to which datasets are sent.
+ * Represents a catalog web-application to which datasets are sent.
  */
 interface ITargetCatalog extends ICatalog
 {
+    /** @var string[] */
+    public const CREDENTIAL_KEYS = [
+        'owner_org',
+        'user_id',
+        'api_key',
+    ];
+
     /**
      * Harvests the catalog and retrieves all the datasets found during this harvesting process.
      * When the `$credentials` argument is provided the following keys **must** be present:.
@@ -27,7 +34,7 @@ interface ITargetCatalog extends ICatalog
      * @throws CatalogHarvestingException Thrown if for any reason the harvesting process is
      *                                    interrupted
      *
-     * @return array The harvested data from the catalog
+     * @return array<mixed, mixed> The harvested data from the catalog
      */
     public function getData(array $credentials = []): array;
 
@@ -35,7 +42,7 @@ interface ITargetCatalog extends ICatalog
      * Retrieves the properties which should persist regardless of the DONLSync mutation operations
      * on a dataset.
      *
-     * @return string[] The properties of a datasets which should persists on the target catalog
+     * @return array<string, array> The properties of a datasets which should persists on the target catalog
      */
     public function getPersistentProperties(): array;
 
@@ -87,7 +94,7 @@ interface ITargetCatalog extends ICatalog
      * @throws CatalogPublicationException Thrown if for any reason the target catalog fails to
      *                                     return the requested dataset
      *
-     * @return array The requested dataset, including its distributions
+     * @return array<string, mixed> The requested dataset, including its distributions
      */
     public function getDataset(string $id): array;
 }

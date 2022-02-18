@@ -37,21 +37,21 @@ interface IDCATEntityBuildRule
      * Attempts to create a single DCATEntity based on the given data and the configured Mapping
      * implementations. May return `null` if no DCATEntity can be constructed.
      *
-     * @param array    $data    The data harvested from the catalog
-     * @param string[] $notices The notices generated during the dataset building process
+     * @param array<mixed, mixed> $data    The data harvested from the catalog
+     * @param string[]            $notices The notices generated during the dataset building process
      *
      * @return DCATEntity|null The created DCATEntity or null if no valid DCATEntity could be
      *                         created
      */
-    public function build(array &$data, array &$notices): ?DCATEntity;
+    public function build(array &$data, array &$notices);
 
     /**
      * Attempts to create more than one DCATEntity for a given property based on the given data and
      * the configured Mapping implementations. May return an empty array if no DCATEntity's can be
      * constructed.
      *
-     * @param array    $data    The data harvested from the catalog
-     * @param string[] $notices The notices generated during the dataset building process
+     * @param array<mixed, mixed> $data    The data harvested from the catalog
+     * @param string[]            $notices The notices generated during the dataset building process
      *
      * @return DCATEntity[] The created DCATEntities
      *
@@ -65,34 +65,6 @@ interface IDCATEntityBuildRule
      * @return string The property set
      */
     public function getProperty(): string;
-
-    /**
-     * The configured defaults for the ISourceCatalog.
-     *
-     * @return DefaultMapper The defaults for this BuildRule
-     */
-    public function getDefaults(): DefaultMapper;
-
-    /**
-     * The configured ValueMappers for the ISourceCatalog.
-     *
-     * @return ValueMapper[] The value mappers for this BuildRule
-     */
-    public function getValueMappers(): array;
-
-    /**
-     * The configured BlacklistMapper for the ISourceCatalog.
-     *
-     * @return BlacklistMapper[] The blacklists for this BuildRule
-     */
-    public function getBlacklists(): array;
-
-    /**
-     * The configured WhitelistMapper for the ISourceCatalog.
-     *
-     * @return WhitelistMapper[] The whitelists for this BuildRule
-     */
-    public function getWhitelists(): array;
 
     /**
      * Setter for the defaults of this BuildRule.

@@ -9,8 +9,12 @@ namespace DonlSync\Dataset\Mapping;
  */
 abstract class AbstractMapper
 {
-    /** @var string[] */
-    protected $map;
+    /**
+     * The mapping data.
+     *
+     * @var string[]
+     */
+    protected array $map;
 
     /**
      * AbstractMapper constructor.

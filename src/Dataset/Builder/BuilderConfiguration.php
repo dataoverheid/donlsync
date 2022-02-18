@@ -19,24 +19,39 @@ use GuzzleHttp\Client;
  */
 class BuilderConfiguration
 {
-    /** @var DefaultMapper */
-    protected $defaults;
+    /**
+     * The mapping implementation for applying default values.
+     */
+    protected ?DefaultMapper $defaults;
 
-    /** @var ValueMapper[] */
-    protected $value_mappers;
+    /**
+     * The mapping implementations per field for transforming harvested values.
+     *
+     * @var ValueMapper[]
+     */
+    protected array $value_mappers;
 
-    /** @var BlacklistMapper[] */
-    protected $blacklists;
+    /**
+     * The mapping implementations per field for blocking the harvesting of certain metadata values.
+     *
+     * @var BlacklistMapper[]
+     */
+    protected array $blacklists;
 
-    /** @var WhitelistMapper[] */
-    protected $whitelists;
+    /**
+     * The mapping implementations per field for only allowing the harvesting of certain metadata
+     * values.
+     *
+     * @var WhitelistMapper[]
+     */
+    protected array $whitelists;
 
     /**
      * BuilderConfiguration constructor.
      */
     public function __construct()
     {
-        $this->defaults      = [];
+        $this->defaults      = null;
         $this->value_mappers = [];
         $this->blacklists    = [];
         $this->whitelists    = [];
@@ -85,9 +100,9 @@ class BuilderConfiguration
     /**
      * Getter for the configured defaults.
      *
-     * @return DefaultMapper The defaults
+     * @return DefaultMapper|null The defaults
      */
-    public function getDefaults(): DefaultMapper
+    public function getDefaults(): ?DefaultMapper
     {
         return $this->defaults;
     }

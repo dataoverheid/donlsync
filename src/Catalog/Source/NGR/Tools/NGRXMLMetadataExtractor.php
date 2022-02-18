@@ -17,6 +17,65 @@ class NGRXMLMetadataExtractor extends XMLParser
      * Queries the XML response for a given named field. The named field is translated to a XPath
      * selector which will be used to perform the actual query.
      *
+     * @param string          $type     The type of field to get
+     * @param string          $field    The named field to look for
+     * @param int             $iterator The nth dataset to search through
+     * @param bool            $multiple (optional) Whether or not to expect multiple return values
+     * @param DOMElement|null $context  (optional) The DOMElement to use as context while searching
+     *
+     * @throws CatalogHarvestingException If no field is configured with the given name
+     *
+     * @return string|string[] The search result
+     */
+    public function field(string $type, string $field, int $iterator, bool $multiple = false,
+                          DOMElement $context = null)
+    {
+        if (!array_key_exists($field, $this->xpath_selectors[$type])) {
+            throw new CatalogHarvestingException(
+                sprintf('Request for %s field without XPath selector; field %s', $type, $field)
+            );
+        }
+
+        $method = $multiple
+            ? 'queryMultipleValues'
+            : 'querySingleValue';
+
+        foreach ($this->xpath_selectors[$type][$field] as $xpath_selector) {
+            if ($iterator > 0) {
+                $value = $this->$method(sprintf($xpath_selector, $iterator), $context);
+            } else {
+                $value = $this->$method($xpath_selector, $context);
+            }
+
+            if (!empty($value) || is_string($value) && mb_strlen($value) > 0) {
+                return $value;
+            }
+        }
+
+        return $multiple ? [] : '';
+    }
+
+    /**
+     * Queries the XML response for a given named field. The named field is translated to a XPath
+     * selector which will be used to perform the actual query.
+     *
+     * @param string          $field    The named field to look for
+     * @param bool            $multiple (optional) Whether or not to expect multiple return values
+     * @param DOMElement|null $context  (optional) The DOMElement to use as context while searching
+     *
+     * @throws CatalogHarvestingException If no field is configured with the given name
+     *
+     * @return string The search result
+     */
+    public function schemaField(string $field, bool $multiple = false, DOMElement $context = null)
+    {
+        return $this->field('schema', $field, 0, $multiple, $context);
+    }
+
+    /**
+     * Queries the XML response for a given named field. The named field is translated to a XPath
+     * selector which will be used to perform the actual query.
+     *
      * @param string $field    The named field to look for
      * @param int    $iterator The nth dataset to search through
      * @param bool   $multiple (optional) Whether or not to expect multiple return values
@@ -27,25 +86,7 @@ class NGRXMLMetadataExtractor extends XMLParser
      */
     public function datasetField(string $field, int $iterator, bool $multiple = false)
     {
-        if (!array_key_exists($field, $this->xpath_selectors['dataset'])) {
-            throw new CatalogHarvestingException(
-                'Request for dataset field without XPath selector; field ' . $field
-            );
-        }
-
-        $method = $multiple
-            ? 'queryMultipleValues'
-            : 'querySingleValue';
-
-        foreach ($this->xpath_selectors['dataset'][$field] as $xpath_selector) {
-            $value = $this->$method(sprintf($xpath_selector, $iterator), null);
-
-            if (!empty($value)) {
-                return $value;
-            }
-        }
-
-        return $multiple ? [] : '';
+        return $this->field('dataset', $field, $iterator, $multiple);
     }
 
     /**
@@ -149,30 +190,25 @@ class NGRXMLMetadataExtractor extends XMLParser
     }
 
     /**
-     * Queries the XML for the dataset contactPoint name.
+     * Queries the XML for the lat/long bounding box metadata.
      *
      * @param int $iterator The nth dataset to search through
      *
-     * @return string The search result
+     * @return array<int, array> The coordinates
      */
-    public function getContactPointName($iterator): string
+    public function getSpatialCoordinates(int $iterator): array
     {
-        $xpaths = $this->xpath_selectors['dataset']['contact_point_name'];
-        $person = $this->querySingleValue(sprintf($xpaths[0], $iterator));
-        $org    = $this->querySingleValue(sprintf($xpaths[1], $iterator));
+        $xpaths = $this->xpath_selectors['dataset']['coordinates'];
 
-        if ('' !== $person && '' === $org) {
-            return $person;
+        $north = $this->querySingleValue(sprintf($xpaths['north'], $iterator));
+        $west  = $this->querySingleValue(sprintf($xpaths['west'], $iterator));
+        $south = $this->querySingleValue(sprintf($xpaths['south'], $iterator));
+        $east  = $this->querySingleValue(sprintf($xpaths['east'], $iterator));
+
+        if (empty($north) || empty($west) || empty($south) || empty($east)) {
+            return [];
         }
 
-        if ('' !== $person && '' !== $org) {
-            return $person . ', ' . $org;
-        }
-
-        if ('' === $org) {
-            return $this->querySingleValue(sprintf($xpaths[2], $iterator));
-        }
-
-        return $org;
+        return [[$west, $north], [$east, $south]];
     }
 }

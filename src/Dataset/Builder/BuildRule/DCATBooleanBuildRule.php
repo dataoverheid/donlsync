@@ -3,7 +3,6 @@
 namespace DonlSync\Dataset\Builder\BuildRule;
 
 use DCAT_AP_DONL\DCATBoolean;
-use DCAT_AP_DONL\DCATEntity;
 
 /**
  * Class DCATBooleanBuildRule.
@@ -16,38 +15,18 @@ class DCATBooleanBuildRule extends AbstractDCATEntityBuildRule implements IDCATE
 {
     /**
      * {@inheritdoc}
+     *
+     * @return DCATBoolean|null The created DCATBoolean
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATBoolean
     {
-        if (!$this->valueIsPresent($this->property, $data, $notices)) {
-            return null;
-        }
-
-        if ($this->valueIsBlacklisted($this->property, $data, $notices)) {
-            return null;
-        }
-
-        if (!$this->valueIsWhitelisted($this->property, $data, $notices)) {
-            return null;
-        }
-
-        $this->applyValueMapping($this->property, $data, $notices);
-
-        $dcat_boolean = new DCATBoolean($data[$this->property]);
-
-        if (!$dcat_boolean->validate()->validated()) {
-            $notices[] = sprintf('%s: %s: value %s is not valid, discarding',
-                $this->prefix, ucfirst($this->property), $dcat_boolean->getData()
-            );
-
-            return null;
-        }
-
-        return $dcat_boolean;
+        return $this->buildSingleProperty($data, $notices, DCATBoolean::class);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATBoolean[] The created DCATBooleans
      */
     public function buildMultiple(array &$data, array &$notices): array
     {
@@ -66,6 +45,8 @@ class DCATBooleanBuildRule extends AbstractDCATEntityBuildRule implements IDCATE
                 continue;
             }
 
+            $original_value = $data[$this->property][$i];
+
             $this->applyMultiValuedValueMapping($this->property, $data, $notices, $i);
 
             $dcat_boolean = new DCATBoolean($data[$this->property][$i]);
@@ -74,6 +55,8 @@ class DCATBooleanBuildRule extends AbstractDCATEntityBuildRule implements IDCATE
                 $notices[] = sprintf('%s: %s: value %s is not valid, discarding',
                     $this->prefix, ucfirst($this->property), $dcat_boolean->getData()
                 );
+
+                $this->conditionallyRegisterMissingMapping($original_value, $data[$this->property][$i]);
 
                 continue;
             }

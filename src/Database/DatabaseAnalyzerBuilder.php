@@ -14,8 +14,10 @@ use DonlSync\Helper\OutputHelper;
  */
 class DatabaseAnalyzerBuilder
 {
-    /** @var DatabaseAnalyzer */
-    protected $build;
+    /**
+     * The DatabaseAnalyzer instance being built.
+     */
+    protected DatabaseAnalyzer $build;
 
     /**
      * DatabaseAnalyzerBuilder constructor.

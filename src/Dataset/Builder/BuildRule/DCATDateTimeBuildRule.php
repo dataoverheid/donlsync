@@ -3,7 +3,6 @@
 namespace DonlSync\Dataset\Builder\BuildRule;
 
 use DCAT_AP_DONL\DCATDateTime;
-use DCAT_AP_DONL\DCATEntity;
 
 /**
  * Class DCATDateTimeBuildRule.
@@ -16,38 +15,18 @@ class DCATDateTimeBuildRule extends AbstractDCATEntityBuildRule implements IDCAT
 {
     /**
      * {@inheritdoc}
+     *
+     * @return DCATDateTime|null The created DCATDateTime
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATDateTime
     {
-        if (!$this->valueIsPresent($this->property, $data, $notices)) {
-            return null;
-        }
-
-        if ($this->valueIsBlacklisted($this->property, $data, $notices)) {
-            return null;
-        }
-
-        if (!$this->valueIsWhitelisted($this->property, $data, $notices)) {
-            return null;
-        }
-
-        $this->applyValueMapping($this->property, $data, $notices);
-
-        $dcat_datetime = new DCATDateTime($data[$this->property]);
-
-        if (!$dcat_datetime->validate()->validated()) {
-            $notices[] = sprintf('%s: %s: value %s is not valid, discarding',
-                $this->prefix, ucfirst($this->property), $dcat_datetime->getData()
-            );
-
-            return null;
-        }
-
-        return $dcat_datetime;
+        return $this->buildSingleProperty($data, $notices, DCATDateTime::class);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATDateTime[] The created DCATDateTimes
      */
     public function buildMultiple(array &$data, array &$notices): array
     {
@@ -66,6 +45,8 @@ class DCATDateTimeBuildRule extends AbstractDCATEntityBuildRule implements IDCAT
                 continue;
             }
 
+            $original_value = $data[$this->property][$i];
+
             $this->applyMultiValuedValueMapping($this->property, $data, $notices, $i);
 
             $dcat_datetime = new DCATDateTime($data[$this->property][$i]);
@@ -74,6 +55,8 @@ class DCATDateTimeBuildRule extends AbstractDCATEntityBuildRule implements IDCAT
                 $notices[] = sprintf('%s: %s: value %s is not valid, discarding',
                     $this->prefix, ucfirst($this->property), $dcat_datetime->getData()
                 );
+
+                $this->conditionallyRegisterMissingMapping($original_value, $data[$this->property][$i]);
 
                 continue;
             }

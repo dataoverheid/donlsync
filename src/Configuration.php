@@ -3,6 +3,7 @@
 namespace DonlSync;
 
 use DonlSync\Exception\ConfigurationException;
+use DonlSync\Exception\DonlSyncRuntimeException;
 
 /**
  * Class Configuration.
@@ -11,13 +12,17 @@ use DonlSync\Exception\ConfigurationException;
  */
 class Configuration
 {
-    /** @var array */
-    private $data;
+    /**
+     * The configuration data as a `{key} => {value}` array.
+     *
+     * @var array<string, mixed>
+     */
+    private array $data;
 
     /**
      * Configuration constructor.
      *
-     * @param array $data The configuration data
+     * @param array<string, mixed> $data The configuration data
      */
     public function __construct(array $data)
     {
@@ -29,7 +34,6 @@ class Configuration
      *
      * @param string $path The path to the JSON file relative to the root of this project
      *
-     * @throws ConfigurationException If the given configuration file does not exist
      * @throws ConfigurationException If the given configuration file cannot be accessed
      * @throws ConfigurationException If the given configuration file is not a JSON file
      * @throws ConfigurationException If the given configuration file contains invalid JSON
@@ -42,12 +46,6 @@ class Configuration
         if (!is_readable($path)) {
             throw new ConfigurationException(
                 'Cannot access configuration file at [ ' . $path . ' ]'
-            );
-        }
-
-        if (!file_exists($path)) {
-            throw new ConfigurationException(
-                'Configuration file at [ ' . $path . ' ] does not appear to exist'
             );
         }
 
@@ -64,13 +62,29 @@ class Configuration
     }
 
     /**
+     * Checks if the given `$data` array contains the required keys. If any key is absent a
+     * `DonlSyncRuntimeException` will be thrown.
+     *
+     * @param array<string, mixed> $data The data that should contain the given keys
+     * @param string[]             $keys The keys that must be present in the data
+     */
+    public static function checkKeys(array $data, array $keys): void
+    {
+        foreach ($keys as $key) {
+            if (!array_key_exists($key, $data)) {
+                throw new DonlSyncRuntimeException('Missing configuration key: ' . $key);
+            }
+        }
+    }
+
+    /**
      * Retrieve a specific key from the configuration data.
      *
      * @param string $key The key holding the requested setting
      *
      * @throws ConfigurationException If no such key is present in the data
      *
-     * @return string|int|array The value behind the key
+     * @return string|int|bool|array<mixed, mixed> The value behind the key
      */
     public function get(string $key)
     {
@@ -84,7 +98,7 @@ class Configuration
     /**
      * Retrieve all the defined configuration data.
      *
-     * @return array The configuration data
+     * @return array<string, mixed> The configuration data
      */
     public function all(): array
     {

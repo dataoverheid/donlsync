@@ -1,0 +1,27 @@
+version: "2"
+
+
+networks:
+  donlsync:
+
+
+volumes:
+  postgres_data:
+
+
+services:
+  postgres:
+    container_name: donlsync-postgres
+    image: library/postgres:13
+    restart: "no"
+    networks:
+      donlsync:
+    environment:
+      TZ: "Europe/Amsterdam"
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw
+    ports:
+      - "127.0.0.1:5432:5432/tcp"

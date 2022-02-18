@@ -13,8 +13,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class OutputHelper
 {
-    /** @var OutputInterface */
-    protected $output;
+    /**
+     * The implementation for writing application output.
+     */
+    protected OutputInterface $output;
 
     /**
      * OutputHelper constructor.
@@ -63,6 +65,11 @@ class OutputHelper
         }
     }
 
+    /**
+     * Writes the header of the DatabaseAnalyser.
+     *
+     * @param ITargetCatalog $target The target catalog being analyzed
+     */
     public function writeAnalyzerHeader(ITargetCatalog $target): void
     {
         $this->writeDivider();
@@ -76,9 +83,10 @@ class OutputHelper
     /**
      * Writes the synchronization introduction and configuration to the application output stream.
      *
-     * @param array     $source_catalog_settings The settings of the source catalog
-     * @param array     $target_catalog_settings The settings of the target catalog
-     * @param DateTimer $stopwatch               The object tracking the execution time
+     * @param array<string, mixed> $source_catalog_settings The settings of the source catalog
+     * @param array<string, mixed> $target_catalog_settings The settings of the target catalog
+     * @param DateTimer            $stopwatch               The object tracking the execution
+     *                                                      time
      */
     public function writeHeader(array $source_catalog_settings, array $target_catalog_settings,
                                 DateTimer $stopwatch): void
@@ -180,20 +188,20 @@ class OutputHelper
         );
 
         $this->output->writeln('');
-        $this->writeTabbed('  Validated datasets', $summary->get('validated_datasets'));
-        $this->writeTabbed('    Created datasets', $summary->get('created_datasets'));
-        $this->writeTabbed('    Updated datasets', $summary->get('updated_datasets'));
-        $this->writeTabbed('    Ignored datasets', $summary->get('ignored_datasets'));
-        $this->writeTabbed('    Rejected datasets', $summary->get('rejected_datasets'));
+        $this->writeTabbed('  Validated datasets', strval($summary->get('validated_datasets')));
+        $this->writeTabbed('    Created datasets', strval($summary->get('created_datasets')));
+        $this->writeTabbed('    Updated datasets', strval($summary->get('updated_datasets')));
+        $this->writeTabbed('    Ignored datasets', strval($summary->get('ignored_datasets')));
+        $this->writeTabbed('    Rejected datasets', strval($summary->get('rejected_datasets')));
 
         $this->output->writeln('');
-        $this->writeTabbed('  Discarded datasets', $summary->get('discarded_datasets'));
+        $this->writeTabbed('  Discarded datasets', strval($summary->get('discarded_datasets')));
 
         $this->output->writeln('');
-        $this->writeTabbed('  Deleted datasets', $summary->get('deleted_datasets'));
+        $this->writeTabbed('  Deleted datasets', strval($summary->get('deleted_datasets')));
 
         $this->output->writeln('');
-        $this->writeTabbed('  Conflicts', $summary->get('conflict_datasets'));
+        $this->writeTabbed('  Conflicts', strval($summary->get('conflict_datasets')));
 
         $this->writeDivider();
     }
@@ -229,8 +237,8 @@ class OutputHelper
                                                       int $datasets_on_database): void
     {
         $this->output->writeln('');
-        $this->writeTabbed('Catalog records', $dataset_on_target, 30);
-        $this->writeTabbed('Database records', $datasets_on_database, 30);
+        $this->writeTabbed('Catalog records', strval($dataset_on_target), 30);
+        $this->writeTabbed('Database records', strval($datasets_on_database), 30);
         $this->output->writeln('');
     }
 
@@ -344,9 +352,9 @@ class OutputHelper
     /**
      * Writes the introduction of a dataset to process.
      *
-     * @param array          $dataset        The dataset to process
-     * @param ITargetCatalog $target         The target catalog
-     * @param array          $known_datasets The known datasets on the target catalog
+     * @param array<string, mixed> $dataset        The dataset to process
+     * @param ITargetCatalog       $target         The target catalog
+     * @param array<int, mixed>    $known_datasets The known datasets on the target catalog
      */
     public function writeDatasetIntro(array $dataset, ITargetCatalog $target,
                                       array $known_datasets): void
@@ -444,7 +452,7 @@ class OutputHelper
     /**
      * Writes the introduction of a dataset to be deleted.
      *
-     * @param array $dataset The dataset to be deleted
+     * @param array<string, mixed> $dataset The dataset to be deleted
      */
     public function writeDatasetToDelete(array $dataset): void
     {
@@ -498,7 +506,7 @@ class OutputHelper
      *
      * @param string|null $message The error message
      */
-    public function writeDatasetSynchronizationCancelled(?string $message = null)
+    public function writeDatasetSynchronizationCancelled(?string $message = null): void
     {
         $this->output->writeln('Cancelling synchronization, unrecoverable error.');
 
@@ -547,23 +555,6 @@ class OutputHelper
             'Reason', 'Dataset deletions are disabled in current execution',
             11
         );
-    }
-
-    /**
-     * Write that persistent properties could not be set because the target catalog was unable to
-     * provide the dataset.
-     *
-     * @param string $message The error message
-     */
-    public function writeDatasetUpdateComparisonRejected(string $message): void
-    {
-        $this->writeTabbed('Result', 'Rejected', 11);
-        $this->writeTabbed(
-            'Reason',
-            'Failed to compare dataset to the dataset on the target catalog',
-            11
-        );
-        $this->writeTabbed('', $message, 11);
     }
 
     /**
