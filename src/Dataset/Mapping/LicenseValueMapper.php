@@ -12,11 +12,17 @@ use DCAT_AP_DONL\DCATException;
  */
 class LicenseValueMapper extends ValueMapper
 {
-    /** @var string */
+    /**
+     * The valuelist of the license fields.
+     *
+     * @var string
+     */
     private const DCAT_VALUELIST = 'DONL:License';
 
-    /** @var string */
-    private $fallback_license;
+    /**
+     * The license to use as a fallback if no valid license can be constructed.
+     */
+    private string $fallback_license;
 
     /**
      * {@inheritdoc}

@@ -1,7 +1,8 @@
 {
+  "ckan_query": "*:*",
   "catalog_name": "NMGN",
   "catalog_endpoint": "https://opendata.nijmegen.nl",
-  "api_base_path": "http://nijmegen-intellegunt-ckan.intellegunt.nl",
+  "api_base_path": "https://opendata.nijmegen.nl:8080",
   "mappings": {
     "defaults": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/defaults/NMGN.json",
     "transformations": [

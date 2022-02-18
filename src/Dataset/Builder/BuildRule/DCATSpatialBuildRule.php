@@ -2,7 +2,7 @@
 
 namespace DonlSync\Dataset\Builder\BuildRule;
 
-use DCAT_AP_DONL\DCATEntity;
+use DCAT_AP_DONL\DCATSpatial;
 
 /**
  * Class DCATSpatialBuildRule.
@@ -15,8 +15,10 @@ class DCATSpatialBuildRule extends AbstractDCATEntityBuildRule implements IDCATE
 {
     /**
      * {@inheritdoc}
+     *
+     * @return DCATSpatial|null The created DCATSpatial
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATSpatial
     {
         // single spatial builder not supported (yet?).
 
@@ -25,6 +27,8 @@ class DCATSpatialBuildRule extends AbstractDCATEntityBuildRule implements IDCATE
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATSpatial[] The created DCATSpatials
      */
     public function buildMultiple(array &$data, array &$notices): array
     {

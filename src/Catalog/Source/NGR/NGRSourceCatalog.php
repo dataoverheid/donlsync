@@ -2,7 +2,8 @@
 
 namespace DonlSync\Catalog\Source\NGR;
 
-use DonlSync\Application;
+use DOMElement;
+use DonlSync\ApplicationInterface;
 use DonlSync\Catalog\Source\ISourceCatalog;
 use DonlSync\Catalog\Source\NGR\BuildRule\NGRBuildRuleFactory;
 use DonlSync\Catalog\Source\NGR\Tools\NGRXMLMetadataExtractor;
@@ -12,6 +13,7 @@ use DonlSync\Exception\CatalogHarvestingException;
 use DonlSync\Exception\CatalogInitializationException;
 use DonlSync\Exception\ConfigurationException;
 use DonlSync\Exception\MappingException;
+use DonlSync\Helper\StringHelper;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
@@ -22,49 +24,105 @@ use GuzzleHttp\Exception\RequestException;
  */
 class NGRSourceCatalog implements ISourceCatalog
 {
-    /** @var int */
+    /**
+     * The 'ideal' length of a harvested datetime property.
+     *
+     * @var int
+     */
     private const DATE_LENGTH_MATCH = 19;
 
-    /** @var string */
-    private $catalog_name;
+    /**
+     * The name of the catalog.
+     */
+    private string $catalog_name;
 
-    /** @var string */
-    private $catalog_endpoint;
+    /**
+     * The URL of the catalog.
+     */
+    private string $catalog_endpoint;
 
-    /** @var string[] */
-    private $credentials;
+    /**
+     * The credentials to use when sending the harvested datasets to the target catalog.
+     *
+     * @var array<string, string>
+     */
+    private array $credentials;
 
-    /** @var Client */
-    private $api_client;
+    /**
+     * The Guzzle client for interacting with the catalog API.
+     */
+    private Client $api_client;
 
-    /** @var BuilderConfiguration */
-    private $builder_config;
+    /**
+     * The configuration that should be given to the builder. This configuration instructs the
+     * builder how to construct datasets from the data harvested from this catalog.
+     */
+    private BuilderConfiguration $builder_config;
 
-    /** @var array */
-    private $api_config;
+    /**
+     * The configuration for interacting with the NGR API.
+     *
+     * @var array<string, mixed>
+     */
+    private array $api_config;
 
-    /** @var array */
-    private $tag_config;
+    /**
+     * The validation rules for creating valid tags according to CKAN.
+     *
+     * @var array<string, mixed>
+     */
+    private array $tag_config;
 
-    /** @var array */
-    private $xpaths;
+    /**
+     * The XPath queries per field for harvesting the metadata of said field.
+     *
+     * @var array<string, mixed>
+     */
+    private array $xpaths;
 
-    /** @var string */
-    private $http_default;
+    /**
+     * The DCAT configuration data.
+     */
+    private Configuration $dcat_config;
 
-    /** @var Configuration */
-    private $dcat_config;
+    /**
+     * The 'timestring' to append to datetime properties.
+     */
+    private string $time_appendage;
 
-    /** @var string */
-    private $time_appendage;
+    /**
+     * The pattern to use for constructing the DCAT identifier property of a dataset.
+     */
+    private string $id_pattern;
 
-    /** @var string */
-    private $id_pattern;
+    /**
+     * The pattern to use for constructing the link to a Feature Catalog Description.
+     */
+    private string $schema_pattern;
+
+    /**
+     * The template to use for generation Visualization distributions of a NGR dataset.
+     *
+     * @var array<string, mixed>
+     */
+    private array $visualization_preset;
+
+    /**
+     * The template to use for generation DataSchema distributions of an NGR dataset.
+     *
+     * @var array<string, mixed>
+     */
+    private array $dataschema_preset;
+
+    /**
+     * Whether to harvest any exposed bounding box geo metadata from the datasets.
+     */
+    private bool $harvest_bounding_box;
 
     /**
      * {@inheritdoc}
      *
-     * The following array keys are expected in `$catalog_settings`:
+     * The following array keys are expected in `$config`:
      * - catalog_name
      * - catalog_endpoint
      * - api_base_path
@@ -72,20 +130,23 @@ class NGRSourceCatalog implements ISourceCatalog
      * - api_id_request_size
      * - api_dataset_request_size
      */
-    public function __construct(Configuration $config, Application $application)
+    public function __construct(Configuration $config, ApplicationInterface $application)
     {
         try {
-            $this->catalog_name     = $config->get('catalog_name');
-            $this->catalog_endpoint = $config->get('catalog_endpoint');
-            $this->credentials      = $application->ckan_credentials($this->catalog_name);
-            $this->api_client       = $application->guzzle_client($config->get('api_base_path'));
-            $this->api_config       = $config->get('api');
-            $this->xpaths           = $config->get('xpath_selectors');
-            $this->tag_config       = $application->config('ckan')->get('tags');
-            $this->http_default     = $application->config('http')->get('procotol');
-            $this->dcat_config      = $application->config('dcat');
-            $this->time_appendage   = $this->dcat_config->get('datetime_appendage');
-            $this->id_pattern       = $config->get('identifier_pattern');
+            $this->catalog_name         = $config->get('catalog_name');
+            $this->catalog_endpoint     = $config->get('catalog_endpoint');
+            $this->credentials          = $application->ckan_credentials($this->catalog_name);
+            $this->api_client           = $application->guzzle_client($config->get('api_base_path'));
+            $this->api_config           = $config->get('api');
+            $this->xpaths               = $config->get('xpath_selectors');
+            $this->tag_config           = $application->config('ckan')->get('tags');
+            $this->dcat_config          = $application->config('dcat');
+            $this->time_appendage       = $this->dcat_config->get('datetime_appendage');
+            $this->id_pattern           = $config->get('identifier_pattern');
+            $this->schema_pattern       = $config->get('schema_url_pattern');
+            $this->visualization_preset = $config->get('visualization');
+            $this->dataschema_preset    = $config->get('dataschema');
+            $this->harvest_bounding_box = $config->get('harvest_bounding_box');
 
             $this->builder_config = BuilderConfiguration::loadBuilderConfigurations(
                 $config, $application->guzzle_client(), $application->mapping_loader()
@@ -145,7 +206,7 @@ class NGRSourceCatalog implements ISourceCatalog
             $id_rows = $dataset_count_on_ngr;
         }
 
-        for ($i = 1; $i < $dataset_count_on_ngr; $i = $i + $id_rows) {
+        for ($i = 1; $i <= $dataset_count_on_ngr; $i = $i + $id_rows) {
             $dataset_ids = array_merge(
                 $dataset_ids,
                 $this->getDatasetIDsFromCatalog($i, $i + $id_rows - 1)
@@ -250,11 +311,11 @@ class NGRSourceCatalog implements ISourceCatalog
     /**
      * Retrieve specific datasets from the NGR catalog based on their IDs.
      *
-     * @param array $ids The ids of the datasets to harvest
+     * @param array<mixed, string|array> $ids The ids of the datasets to harvest
      *
      * @throws CatalogHarvestingException On any interaction error while communicating with the API
      *
-     * @return array The harvested datasets
+     * @return array<int, array> The harvested datasets
      */
     private function getDatasetsByIDRange(array $ids): array
     {
@@ -301,7 +362,7 @@ class NGRSourceCatalog implements ISourceCatalog
      *
      * @throws CatalogHarvestingException When attempting to harvest data without XPath mapping
      *
-     * @return array The extracted metadata
+     * @return array<string, mixed> The extracted metadata
      */
     private function extractData(string $xml, int $index): array
     {
@@ -310,15 +371,18 @@ class NGRSourceCatalog implements ISourceCatalog
             'language'           => $extractor->datasetField('language', $index, true),
             'license'            => $extractor->getDatasetLicense($index),
             'theme'              => $extractor->datasetField('theme', $index, true),
-            'contact_point_name' => $extractor->getContactPointName($index),
             'modificationDate'   => $extractor->getModificationDate($index),
             'conformsTo'         => $extractor->datasetField('conformsTo', $index, true),
         ];
 
+        if ($this->harvest_bounding_box) {
+            $harvest['coordinates'] = $extractor->getSpatialCoordinates($index);
+        }
+
         $fields = [
             'identifier', 'landingPage', 'title', 'description', 'metadataLanguage', 'authority',
             'publisher', 'contact_point_email', 'contact_point_phone', 'contact_point_webpage',
-            'releaseDate',
+            'contact_point_name', 'releaseDate', 'temporal_start', 'temporal_end',
         ];
 
         foreach ($fields as $field) {
@@ -326,10 +390,12 @@ class NGRSourceCatalog implements ISourceCatalog
         }
 
         $harvest['identifier']            = sprintf($this->id_pattern, $harvest['identifier']);
-        $harvest['landingPage']           = $this->repairURL($harvest['landingPage']);
-        $harvest['contact_point_webpage'] = $this->repairURL($harvest['contact_point_webpage']);
+        $harvest['landingPage']           = StringHelper::repairURL($harvest['landingPage']);
+        $harvest['contact_point_webpage'] = StringHelper::repairURL($harvest['contact_point_webpage']);
         $harvest['modificationDate']      = $this->repairDateTime($harvest['modificationDate']);
         $harvest['releaseDate']           = $this->repairDateTime($harvest['releaseDate']);
+        $harvest['temporal_start']        = $this->repairDateTime($harvest['temporal_start']);
+        $harvest['temporal_end']          = $this->repairDateTime($harvest['temporal_end']);
 
         foreach ($extractor->datasetField('keyword', $index, true) as $keyword) {
             $keyword = $this->repairKeyword($keyword);
@@ -363,7 +429,11 @@ class NGRSourceCatalog implements ISourceCatalog
                 $resource[$field] = $extractor->resourceField($field, $distribution, $index);
             }
 
-            $resource['accessURL'] = $this->repairURL($resource['accessURL']);
+            $resource['accessURL'] = StringHelper::repairURL($resource['accessURL']);
+
+            if ('' === $resource['format']) {
+                $resource['format'] = pathinfo($resource['accessURL'])['extension'] ?? '';
+            }
 
             if ('' === $resource['title']) {
                 $resource['title'] = $resource['format'];
@@ -372,33 +442,117 @@ class NGRSourceCatalog implements ISourceCatalog
             $harvest['resources'][] = $resource;
         }
 
+        if (!empty($schema_id = $extractor->datasetField('schema_id', $index))) {
+            $harvest['resources'][] = $this->createDataschemaResource($harvest, $schema_id);
+        }
+
+        if (!empty($graphic = $extractor->datasetField('graphic', $index))) {
+            if (basename($graphic) !== $graphic) {
+                $harvest['resources'][] = $this->createVisualizationResource($graphic, $harvest);
+            }
+        }
+
         return $harvest;
     }
 
     /**
-     * Attempts to repair a given URL.
+     * Generates a DCAT distribution with type Visualization based on the harvested URL pointing to
+     * a graphical representation of a dataset.
      *
-     * - Replaces `http:\\` with `http://`
-     * - Replaces `https:\\` with `https://`
-     * - If the URL starts with `www`, it prepends `https://`.
-     * - Spaces are replaced with `%20`
+     * @param string               $graphicURL The harvested URL
+     * @param array<string, mixed> $harvest    The dataset harvest
      *
-     * @param string $url The url to repair
-     *
-     * @return string The original, possibly modified, url
+     * @return array<string, mixed> The generated visualization distribution
      */
-    private function repairURL(string $url): string
+    private function createVisualizationResource(string $graphicURL, array $harvest): array
     {
-        $url = preg_replace('/http:\\\\\\\\/', $this->http_default, $url);
-        $url = preg_replace('/https:\\\\\\\\/', $this->http_default, $url);
+        $url = StringHelper::repairURL($graphicURL);
 
-        if ('www' === mb_substr($url, 0, 3)) {
-            $url = $this->http_default . $url;
+        // TODO:
+        // Find a reliable way to determine the appropriate format.
+        if (false !== mb_strpos(mb_strtolower($url), 'jpg')) {
+            $format = 'http://publications.europa.eu/resource/authority/file-type/JPEG';
+        } else {
+            $format = 'http://publications.europa.eu/resource/authority/file-type/PNG';
         }
 
-        $url = str_replace(' ', '%20', $url);
+        return array_merge($this->visualization_preset, [
+            'accessURL' => $url,
+            'format'    => $format,
+            'license'   => $harvest['license'],
+        ]);
+    }
 
-        return $url;
+    /**
+     * Transforms the list schema of a given harvested dataset to a distribution.
+     *
+     * @param array<string, mixed> $harvest   The harvested dataset to get the schema from
+     * @param string               $schema_id The id of the schema
+     *
+     * @throws CatalogHarvestingException On any interaction error while communicating with the API
+     *
+     * @return array<string, mixed> The schema in a distribution array
+     */
+    private function createDataschemaResource(array $harvest, string $schema_id): array
+    {
+        try {
+            $response = $this->api_client->get($this->api_config['requests']['schemas'], [
+                'query' => [
+                    'request'        => 'GetRecordById',
+                    'service'        => 'CSW',
+                    'version'        => '2.0.2',
+                    'elementSetName' => 'full',
+                    'outputSchema'   => 'http://www.isotc211.org/2005/gfc',
+                    'id'             => $schema_id,
+                ],
+            ]);
+
+            $extractor  = new NGRXMLMetadataExtractor($response->getBody(), $this->xpaths);
+            $attributes = $extractor->query($this->xpaths['schema']['attributes'][0]);
+
+            $table = array_map(function (DOMElement $attribute) use ($extractor): array {
+                return [
+                    'name'        => $extractor->schemaField('attribute_name', false, $attribute),
+                    'code'        => $extractor->schemaField('attribute_code', false, $attribute),
+                    'type'        => $extractor->schemaField('attribute_type', false, $attribute),
+                    'description' => $extractor->schemaField('attribute_description', false, $attribute),
+                    'legend'      => $this->createLegendTable($extractor, $attribute),
+                ];
+            }, iterator_to_array($attributes));
+
+            return array_merge($this->dataschema_preset, [
+                'title'            => $extractor->schemaField('title'),
+                'description'      => json_encode($table),
+                'license'          => $harvest['license'],
+                'accessURL'        => sprintf($this->schema_pattern, $schema_id),
+                'language'         => $harvest['language'],
+                'metadataLanguage' => $harvest['metadataLanguage'],
+            ]);
+        } catch (RequestException $e) {
+            throw new CatalogHarvestingException($e);
+        }
+    }
+
+    /**
+     * Creates the legend table for an attribute.
+     *
+     * @param NGRXMLMetadataExtractor $extractor The extractor to use to extract data from the XML
+     * @param DOMElement              $attribute The attribute for which we are creating the legend table
+     *
+     * @throws CatalogHarvestingException On any interaction error while communicating with the API
+     *
+     * @return array<string, array<string, string>> The legend table
+     */
+    private function createLegendTable(NGRXMLMetadataExtractor $extractor, DOMElement $attribute): array
+    {
+        $values = $extractor->query($this->xpaths['schema']['attribute_legend'][0], $attribute);
+
+        return array_map(function (DOMElement $value) use ($extractor): array {
+            return [
+                'code'       => $extractor->schemaField('attribute_legend_code', false, $value),
+                'definition' => $extractor->schemaField('attribute_legend_definition', false, $value),
+            ];
+        }, iterator_to_array($values));
     }
 
     /**
@@ -413,10 +567,31 @@ class NGRSourceCatalog implements ISourceCatalog
      */
     private function repairDateTime(string $datetime): string
     {
-        $datetime = str_replace(' ', '-', $datetime);
+        $datetime = str_replace(' ', '-', explode(';', $datetime)[0]);
+
+        if (4 === mb_strlen($datetime)) {
+            $datetime = $datetime . '-01-01';
+        }
+
+        if (7 === mb_strlen($datetime)) {
+            $datetime = $datetime . '-01';
+        }
 
         if (mb_strlen($datetime) > 0 && mb_strlen($datetime) < self::DATE_LENGTH_MATCH) {
-            $datetime = $datetime . $this->time_appendage;
+            // TODO:
+            // Dirty fix for the rare occasion that a NGR dataset contains invalid datetime
+            // literals. Sometimes a NGR datetime day component is simply a '0'. Append a '1' so
+            // that the PHP datetime validation doesn't trip up on this edge-case.
+            //
+            // This should be detected and properly validated in DCATDateTime in the
+            // wterberg/dcat-ap-donl dependency.
+            $parts = explode('-', $datetime);
+
+            if (count($parts) >= 3 && '0' === $parts[2]) {
+                $parts[2] = $parts[2] . '1';
+            }
+
+            $datetime = implode('-', $parts) . $this->time_appendage;
         }
 
         if (mb_strlen($datetime) > self::DATE_LENGTH_MATCH) {

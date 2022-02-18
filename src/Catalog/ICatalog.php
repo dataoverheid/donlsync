@@ -2,7 +2,7 @@
 
 namespace DonlSync\Catalog;
 
-use DonlSync\Application;
+use DonlSync\ApplicationInterface;
 use DonlSync\Configuration;
 use DonlSync\Exception\CatalogHarvestingException;
 use DonlSync\Exception\CatalogInitializationException;
@@ -17,15 +17,15 @@ interface ICatalog
     /**
      * ICatalog constructor.
      *
-     * @param Configuration $config      The settings used to properly configure the catalog
-     *                                   implementation
-     * @param Application   $application The current application context
+     * @param Configuration        $config      The settings used to properly configure the catalog
+     *                                          implementation
+     * @param ApplicationInterface $application The current application context
      *
      * @throws CatalogInitializationException Thrown if the given $catalog_settings array does not
      *                                        contain all the data required by the implementation of
      *                                        this interface
      */
-    public function __construct(Configuration $config, Application $application);
+    public function __construct(Configuration $config, ApplicationInterface $application);
 
     /**
      * Returns a sluggified name of the catalog implementation.
@@ -47,7 +47,7 @@ interface ICatalog
      * @throws CatalogHarvestingException Thrown if for any reason the harvesting process is
      *                                    interrupted
      *
-     * @return array The harvested data from the catalog
+     * @return array<mixed, mixed> The harvested data from the catalog
      */
     public function getData(): array;
 }

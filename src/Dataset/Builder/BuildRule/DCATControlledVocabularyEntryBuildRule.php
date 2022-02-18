@@ -3,7 +3,6 @@
 namespace DonlSync\Dataset\Builder\BuildRule;
 
 use DCAT_AP_DONL\DCATControlledVocabularyEntry;
-use DCAT_AP_DONL\DCATEntity;
 use DCAT_AP_DONL\DCATException;
 
 /**
@@ -15,8 +14,10 @@ use DCAT_AP_DONL\DCATException;
  */
 class DCATControlledVocabularyEntryBuildRule extends AbstractDCATEntityBuildRule implements IDCATEntityBuildRule
 {
-    /** @var string */
-    protected $vocabulary;
+    /**
+     * The vocabulary of the entry.
+     */
+    protected string $vocabulary;
 
     /**
      * {@inheritdoc}
@@ -33,8 +34,10 @@ class DCATControlledVocabularyEntryBuildRule extends AbstractDCATEntityBuildRule
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATControlledVocabularyEntry|null The created DCATControlledVocabularyEntry
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATControlledVocabularyEntry
     {
         $vocabulary_match = 'DONL:License' === $this->vocabulary;
 
@@ -50,6 +53,8 @@ class DCATControlledVocabularyEntryBuildRule extends AbstractDCATEntityBuildRule
             return null;
         }
 
+        $original_value = $data[$this->property];
+
         $this->applyValueMapping($this->property, $data, $notices);
 
         $dcat_controlled_vocabulary_entry = new DCATControlledVocabularyEntry(
@@ -62,6 +67,8 @@ class DCATControlledVocabularyEntryBuildRule extends AbstractDCATEntityBuildRule
                     $this->prefix, ucfirst($this->property),
                     $dcat_controlled_vocabulary_entry->getData()
                 );
+
+                $this->conditionallyRegisterMissingMapping($original_value, $data[$this->property]);
 
                 return null;
             }
@@ -79,6 +86,8 @@ class DCATControlledVocabularyEntryBuildRule extends AbstractDCATEntityBuildRule
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATControlledVocabularyEntry[] The created DCATControlledVocabularyEntries
      */
     public function buildMultiple(array &$data, array &$notices): array
     {
@@ -97,6 +106,8 @@ class DCATControlledVocabularyEntryBuildRule extends AbstractDCATEntityBuildRule
                 continue;
             }
 
+            $original_value = $data[$this->property][$i];
+
             $this->applyMultiValuedValueMapping($this->property, $data, $notices, $i);
 
             $dcat_controlled_vocabulary_entry = new DCATControlledVocabularyEntry(
@@ -109,6 +120,8 @@ class DCATControlledVocabularyEntryBuildRule extends AbstractDCATEntityBuildRule
                         $this->prefix, ucfirst($this->property),
                         $dcat_controlled_vocabulary_entry->getData()
                     );
+
+                    $this->conditionallyRegisterMissingMapping($original_value, $data[$this->property][$i]);
 
                     continue;
                 }

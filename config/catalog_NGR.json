@@ -72,10 +72,26 @@
     "requests": {
       "dataset_count": "geonetwork/srv/dut/q?_content_type=json&from=0&to=0&type=dataset",
       "dataset_ids": "geonetwork/srv/dut/q?_content_type=json&from=%s&to=%s&type=dataset&buildSummary=false&sortBy=changeDate",
-      "datasets": "geonetwork/srv/dut/csw"
+      "datasets": "geonetwork/srv/dut/csw",
+      "schemas": "geonetwork/srv/dut/csw"
     }
   },
+  "harvest_bounding_box": false,
   "identifier_pattern": "https://nationaalgeoregister.nl/geonetwork?uuid=%s",
+  "schema_url_pattern": "https://www.nationaalgeoregister.nl/geonetwork/srv/dut/catalog.search#/metadata/%s",
+  "visualization": {
+    "title": "Gegenereerde grafische weergave",
+    "description": "Dit is een grafische representatie van de dataset die via het NationaalGeoregister.nl aangeboden wordt. \n\nHet is mogelijk dat deze grafische representatie geen weerspiegeling van de data is, maar dient als ondersteunende afbeelding. Indien de dataset via een OGC:WMS service aangeboden wordt, is het mogelijk om zelf een grafische weergave van de dataset te genereren.",
+    "distributionType": "https://data.overheid.nl/distributiontype/visualization",
+    "language": [
+      "http://publications.europa.eu/resource/authority/language/NLD"
+    ],
+    "metadataLanguage": "http://publications.europa.eu/resource/authority/language/NLD"
+  },
+  "dataschema": {
+    "distributionType": "https://data.overheid.nl/distributiontype/dataschema",
+    "format": "http://publications.europa.eu/resource/authority/file-type/JSON"
+  },
   "xpath_selectors": {
     "namespaces": {
       "csw": "http://www.opengis.net/cat/csw/2.0.2",
@@ -87,9 +103,45 @@
       "gml": "http://www.opengis.net/gml",
       "gmx": "http://www.isotc211.org/2005/gmx",
       "xlink": "http://www.w3.org/1999/xlink",
-      "geonet": "http://www.fao.org/geonetwork"
+      "geonet": "http://www.fao.org/geonetwork",
+      "gfc": "http://www.isotc211.org/2005/gfc"
+    },
+    "schema": {
+      "title": [
+        "//csw:GetRecordByIdResponse/gfc:FC_FeatureCatalogue/gmx:name/gco:CharacterString"
+      ],
+      "language": [
+        "//csw:GetRecordByIdResponse/gfc:FC_FeatureCatalogue/gmx:language/gco:CharacterString"
+      ],
+      "attributes": [
+        "//csw:GetRecordByIdResponse/gfc:FC_FeatureCatalogue/gfc:featureType/gfc:FC_FeatureType/gfc:carrierOfCharacteristics"
+      ],
+      "attribute_name": [
+        "gfc:FC_FeatureAttribute/gfc:memberName/gco:LocalName"
+      ],
+      "attribute_code": [
+        "gfc:FC_FeatureAttribute/gfc:code/gco:CharacterString"
+      ],
+      "attribute_type": [
+        "gfc:FC_FeatureAttribute/gfc:valueType/gco:TypeName/gco:aName/gco:CharacterString"
+      ],
+      "attribute_description": [
+        "gfc:FC_FeatureAttribute/gfc:definition/gco:CharacterString"
+      ],
+      "attribute_legend": [
+        "gfc:FC_FeatureAttribute/gfc:listedValue"
+      ],
+      "attribute_legend_code": [
+        "gfc:FC_ListedValue/gfc:code/gco:CharacterString"
+      ],
+      "attribute_legend_definition": [
+        "gfc:FC_ListedValue/gfc:definition/gco:CharacterString"
+      ]
     },
     "dataset": {
+      "schema_id": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contentInfo/gmd:MD_FeatureCatalogueDescription/gmd:featureCatalogueCitation/@uuidref"
+      ],
       "identifier": [
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:fileIdentifier/gco:CharacterString"
       ],
@@ -125,9 +177,12 @@
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_Constraints/gmd:useLimitation/gco:CharacterString"
       ],
       "contact_point_name": [
-        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:individualName/gco:CharacterString[string-length(text()) > 0]",
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString[string-length(text()) > 0]",
-        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString[string-length(text()) > 0]"
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString[string-length(text()) > 0]",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:individualName/gco:CharacterString[string-length(text()) > 0]",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:individualName/gco:CharacterString"
       ],
       "contact_point_email": [
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:address/gmd:CI_Address/gmd:electronicMailAddress/gco:CharacterString",
@@ -142,11 +197,19 @@
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:phone/gmd:CI_Telephone/gmd:voice/gco:CharacterString[string-length(text()) > 0]"
       ],
       "authority": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor/@xlink:href",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor",
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor/@xlink:href",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor",
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString"
       ],
       "publisher": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor/@xlink:href",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor",
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:pointOfContact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor/@xlink:href",
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gmx:Anchor",
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString"
       ],
       "language": [
@@ -160,6 +223,21 @@
       "conformsTo": [
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:MD_Format/gmd:specification/gmx:Anchor/@xlink:href",
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:MD_Format/gmd:specification/gmx:Anchor"
+      ],
+      "coordinates": {
+        "west": "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicBoundingBox/gmd:westBoundLongitude/gco:Decimal",
+        "east": "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicBoundingBox/gmd:eastBoundLongitude/gco:Decimal",
+        "south": "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicBoundingBox/gmd:southBoundLatitude/gco:Decimal",
+        "north": "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicBoundingBox/gmd:northBoundLatitude/gco:Decimal"
+      },
+      "temporal_start": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:extent/gml:TimePeriod/gml:beginPosition"
+      ],
+      "temporal_end": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:extent/gml:TimePeriod/gml:endPosition"
+      ],
+      "graphic": [
+        "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:identificationInfo/gmd:MD_DataIdentification/gmd:graphicOverview/gmd:MD_BrowseGraphic/gmd:fileName/gco:CharacterString"
       ],
       "distribution": [
         "//csw:GetRecordsResponse/csw:SearchResults/gmd:MD_Metadata[position()=%s]/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine[string-length(gmd:CI_OnlineResource/gmd:linkage/gmd:URL) > 0]"

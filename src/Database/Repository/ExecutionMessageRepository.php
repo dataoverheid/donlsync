@@ -3,7 +3,9 @@
 namespace DonlSync\Database\Repository;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
+use Doctrine\DBAL\Schema\Table;
+use PDO;
 
 /**
  * Class ExecutionMessageRepository.
@@ -12,7 +14,11 @@ use Doctrine\DBAL\DBALException;
  */
 class ExecutionMessageRepository
 {
-    /** @var string */
+    /**
+     * The name of the table in the database.
+     *
+     * @var string
+     */
     public const TABLE_NAME = 'ExecutionMessage';
 
     /**
@@ -24,18 +30,31 @@ class ExecutionMessageRepository
      */
     public static function createTable(Connection $connection): void
     {
-        $connection->executeQuery('
-            CREATE TABLE IF NOT EXISTS ExecutionMessage (
-                `id`                INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-                `message_date`      DATETIME         NOT NULL DEFAULT NOW(),
-                `message`           TEXT             NOT NULL,
-                `message_processed` BIT(1)           NOT NULL DEFAULT b\'0\',
-            
-                PRIMARY KEY (`id`),
-                INDEX (`message_date`),
-                INDEX (`message_processed`)
-            ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+        $schema = $connection->getSchemaManager();
+
+        if ($schema->tablesExist(self::TABLE_NAME)) {
+            return;
+        }
+
+        $execution_message = new Table(self::TABLE_NAME);
+
+        $execution_message->addColumn('id', 'integer', [
+            'unsigned'      => true,
+            'autoincrement' => true,
+        ]);
+        $execution_message->addColumn('message_date', 'datetime', [
+            'default' => 'CURRENT_TIMESTAMP',
+        ]);
+        $execution_message->addColumn('message', 'text');
+        $execution_message->addColumn('message_processed', 'boolean', [
+            'default' => false,
+        ]);
+
+        $execution_message->setPrimaryKey(['id']);
+        $execution_message->addIndex(['message_date']);
+        $execution_message->addIndex(['message_processed']);
+
+        $schema->createTable($execution_message);
     }
 
     /**
@@ -48,22 +67,22 @@ class ExecutionMessageRepository
      *
      * @throws DBALException Thrown on any database interaction error
      *
-     * @return array The records matching the query
+     * @return array<int, array> The records matching the query
      */
     public static function getMessagesByDate(Connection $connection, string $date,
                                              bool $mark_as_processed = true): array
     {
-        $statement = $connection->prepare('
-            SELECT  id,
-                    DATE(message_date) AS message_date,
-                    message
-            FROM    ExecutionMessage
-            WHERE   DATE(message_date) = ?
-              AND   message_processed = b\'0\'
-        ');
-        $statement->execute([$date]);
-
-        $results = $statement->fetchAll();
+        $qb      = $connection->createQueryBuilder();
+        $results = $qb->select('id', 'message')
+            ->from(self::TABLE_NAME)
+            ->where($qb->expr()->gte('message_date', ':message_date_start'))
+            ->andWhere($qb->expr()->lte('message_date', ':message_date_end'))
+            ->andWhere($qb->expr()->eq('message_processed', ':is_processed'))
+            ->setParameter('message_date_start', $date . ' 00:00:00')
+            ->setParameter('message_date_end', $date . ' 23:59:59')
+            ->setParameter('is_processed', false, PDO::PARAM_BOOL)
+            ->execute()
+            ->fetchAllAssociative();
 
         if ($mark_as_processed) {
             foreach ($results as $result) {
@@ -80,22 +99,18 @@ class ExecutionMessageRepository
      * The given record must contain the following keys:
      * - message
      *
-     * @param Connection $connection The current database connection
-     * @param array      $record     The record to create
+     * @param Connection           $connection The current database connection
+     * @param array<string, mixed> $record     The record to create
      *
      * @throws DBALException Thrown on any database interaction error
      */
     public static function insertRecord(Connection $connection, array $record): void
     {
-        $statement = $connection->prepare('
-            INSERT INTO ExecutionMessage
-                (message)
-                VALUES(?)
-        ');
-        $statement->execute([
-            $record['message'],
-        ]);
-        $statement->closeCursor();
+        $connection->createQueryBuilder()
+            ->insert(self::TABLE_NAME)
+            ->setValue('message', ':message')
+            ->setParameter('message', $record['message'])
+            ->execute();
     }
 
     /**
@@ -108,12 +123,12 @@ class ExecutionMessageRepository
      */
     public static function markRecordAsProcessed(Connection $connection, int $id): void
     {
-        $statement = $connection->prepare('
-            UPDATE ExecutionMessage
-                SET     message_processed = b\'1\'
-                WHERE   id = ?
-        ');
-        $statement->execute([$id]);
-        $statement->closeCursor();
+        $qb = $connection->createQueryBuilder();
+        $qb->update(self::TABLE_NAME)
+            ->set('message_processed', ':message_processed')
+            ->where($qb->expr()->eq('id', ':id'))
+            ->setParameter('message_processed', true, PDO::PARAM_BOOL)
+            ->setParameter('id', $id)
+            ->execute();
     }
 }

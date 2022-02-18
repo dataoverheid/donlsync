@@ -17,10 +17,10 @@ class ODataCatalogXMLMetadataExtractor extends XMLParser
      * Searches through the XML for a specific named field. The named field is translated to 1 or
      * more configured XPath queries; these XPath queries will be used to perform the actual search.
      *
-     * @param string  $xpath_key The XPath key holding the named field
-     * @param string  $field     The named field
-     * @param DOMNode $context   The query context
-     * @param bool    $multiple  Whether or not to expect an array as output
+     * @param string       $xpath_key The XPath key holding the named field
+     * @param string       $field     The named field
+     * @param DOMNode|null $context   The query context
+     * @param bool         $multiple  Whether or not to expect an array as output
      *
      * @throws CatalogHarvestingException On a non-existent $xpath_key or $field
      *
@@ -60,9 +60,9 @@ class ODataCatalogXMLMetadataExtractor extends XMLParser
      *
      * This method will specifically search for named fields configured under the 'dataset' key.
      *
-     * @param string  $field    The named field
-     * @param DOMNode $context  The query context
-     * @param bool    $multiple Whether or not to expect an array as output
+     * @param string       $field    The named field
+     * @param DOMNode|null $context  The query context
+     * @param bool         $multiple Whether or not to expect an array as output
      *
      * @throws CatalogHarvestingException On a non-existent $field
      *
@@ -81,9 +81,9 @@ class ODataCatalogXMLMetadataExtractor extends XMLParser
      *
      * This method will specifically search for named fields configured under the 'resource' key.
      *
-     * @param string  $field    The named field
-     * @param DOMNode $context  The query context
-     * @param bool    $multiple Whether or not to expect an array as output
+     * @param string       $field    The named field
+     * @param DOMNode|null $context  The query context
+     * @param bool         $multiple Whether or not to expect an array as output
      *
      * @throws CatalogHarvestingException On a non-existent $field
      *

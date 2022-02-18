@@ -1,18 +1,41 @@
 # IDE
-/.idea/*
+/.idea
+
 
 # Composer
 /vendor/*
 /composer.phar
+/auth.json
+
 
 # Test
-/test-reports/*
+/phpcpd.phar
+
+/phpstan.phar
+/phpstan.neon
+
+/php-cs-fixer.phar
+/.php_cs
 /.php_cs.cache
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+
+
+/phpunit.phar
+/phpunit.xml
 /.phpunit.result.cache
-/.phpunit.xml
+
+
+# CI/CD
+/junit.phpunit.unit.xml
+/junit.phpunit.functional.xml
+/junit.phpstan.xml
+/junit.php-xs-fixer.xml
+
 
 # Generated files
 /config/email_recipients.json
-/cache/*
-/log/*
+/cache
+/log
 /.env
+/CHECKSUM

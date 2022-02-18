@@ -5,6 +5,7 @@ namespace DonlSync\Command;
 use DonlSync\Application;
 use DonlSync\Database\Repository\ExecutionMessageRepository as EMR;
 use DonlSync\Database\Repository\ProcessedDatasetsRepository as PDR;
+use DonlSync\Database\Repository\UnmappedValuesRepository as UVR;
 use Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -41,6 +42,7 @@ class DatabaseInstallerCommand extends Command
         $tables = [
             PDR::TABLE_NAME => PDR::class,
             EMR::TABLE_NAME => EMR::class,
+            UVR::TABLE_NAME => UVR::class,
         ];
 
         foreach ($tables as $table => $class) {

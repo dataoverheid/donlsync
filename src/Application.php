@@ -3,13 +3,14 @@
 namespace DonlSync;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\DriverManager;
+use DonlSync\Catalog\Source\Eindhoven\EindhovenSourceCatalog;
 use DonlSync\Catalog\Source\ISourceCatalog;
 use DonlSync\Catalog\Source\NGR\NGRSourceCatalog;
 use DonlSync\Catalog\Source\NMGN\NijmegenSourceCatalog;
 use DonlSync\Catalog\Source\ODataCatalog\ODataCatalog;
 use DonlSync\Catalog\Source\RDW\RDWSourceCatalog;
+use DonlSync\Catalog\Source\StelselCatalogus\StelselCatalogusCatalog;
 use DonlSync\Catalog\Target\DONL\DONLTargetCatalog;
 use DonlSync\Catalog\Target\ITargetCatalog;
 use DonlSync\Dataset\Mapping\MappingLoader;
@@ -23,67 +24,90 @@ use Jenssegers\Blade\Blade;
 use PDO;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
+use RuntimeException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Class Application.
  *
- * Primary container for all application logic. Responsible for directing and processing all in-
- * and output of the DonlSync application.
+ * Basic implementation of the ApplicationInterface.
  */
-class Application
+class Application implements ApplicationInterface
 {
-    /** @var string */
-    public const APP_ROOT = __DIR__ . '/../';
+    /**
+     * The current instance of the ApplicationInterface.
+     */
+    private static ApplicationInterface $instance;
 
-    /** @var string */
-    public const CACHE_DIR = self::APP_ROOT . 'cache/';
+    /**
+     * The implementation for reading application input.
+     */
+    private InputInterface $input;
 
-    /** @var string */
-    public const VIEW_CACHE_DIR = self::CACHE_DIR . 'views/';
+    /**
+     * The implementation for writing application output.
+     */
+    private OutputInterface $output;
 
-    /** @var string */
-    public const CONFIG_PATH = self::APP_ROOT . 'config/';
+    /**
+     * Helper implementation for writing specific messages as output.
+     */
+    private OutputHelper $output_helper;
 
-    /** @var string */
-    public const LOG_DIR = self::APP_ROOT . 'log/';
+    /**
+     * The in-memory cache of the loaded configuration files.
+     *
+     * @var Configuration[]
+     */
+    private array $configurations;
 
-    /** @var string */
-    public const RESOURCES_DIR = self::APP_ROOT . 'resources/';
+    /**
+     * The active database connection. The connection will be initiated on the first request to
+     * Application::database_connection().
+     */
+    private ?Connection $connection;
 
-    /** @var string */
-    public const VIEWS_DIR = self::RESOURCES_DIR . 'views/';
+    /**
+     * The target catalog to which datasets are sent. Will be initiated on the first request to
+     * Application::target_catalog().
+     */
+    private ?ITargetCatalog $target_catalog;
 
-    /** @var InputInterface */
-    private $input;
+    /**
+     * The source catalogs initiated during the execution of the application thus far. A source
+     * catalog will be initiated on the first request for the catalog via the
+     * Application::source_catalog() method.
+     *
+     * They keys of this array match the source catalog names.
+     *
+     * @var array<string, ISourceCatalog>
+     */
+    private array $source_catalogs;
 
-    /** @var OutputInterface */
-    private $output;
+    /**
+     * The implementation to load the external mapping lists. Will be initiated on the first request
+     * to Application::mapping_loader().
+     */
+    private ?MappingLoader $mapping_loader;
 
-    /** @var OutputHelper */
-    private $output_helper;
+    /**
+     * The implementation for sending the email summaries to selected recipients. Will be initiated
+     * on the first request to Application::smtp_client().
+     */
+    private ?PHPMailer $mail_client;
 
-    /** @var Configuration[] */
-    private $configurations;
+    /**
+     * The Blade engine used to render the email summaries. Will be initiated on the first request
+     * to Application::blade_engine().
+     */
+    private ?Blade $blade_engine;
 
-    /** @var Connection */
-    private $connection;
-
-    /** @var ITargetCatalog */
-    private $target_catalog;
-
-    /** @var ISourceCatalog[] */
-    private $source_catalogs;
-
-    /** @var MappingLoader */
-    private $mapping_loader;
-
-    /** @var PHPMailer */
-    private $mail_client;
-
-    /** @var Blade */
-    private $blade_engine;
+    /**
+     * The current version of the application. Will be initiated on the first request to
+     * Application::version().
+     */
+    private ?string $version;
 
     /**
      * Application constructor.
@@ -103,12 +127,29 @@ class Application
         $this->mapping_loader  = null;
         $this->mail_client     = null;
         $this->blade_engine    = null;
+        $this->version         = null;
+
+        if (empty(self::$instance)) {
+            self::$instance = $this;
+        }
     }
 
     /**
-     * Retrieve the input interface of this application.
-     *
-     * @return InputInterface The input of the application
+     * {@inheritdoc}
+     */
+    public static function getInstance(): ApplicationInterface
+    {
+        if (empty(self::$instance)) {
+            throw new RuntimeException(
+                'Application singleton request before application was started.'
+            );
+        }
+
+        return self::$instance;
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function input(): InputInterface
     {
@@ -116,9 +157,7 @@ class Application
     }
 
     /**
-     * Retrieve the output interface of this application.
-     *
-     * @return OutputInterface The output of the application
+     * {@inheritdoc}
      */
     public function output(): OutputInterface
     {
@@ -126,9 +165,7 @@ class Application
     }
 
     /**
-     * Retrieve the output helper.
-     *
-     * @return OutputHelper The output helper
+     * {@inheritdoc}
      */
     public function output_helper(): OutputHelper
     {
@@ -136,14 +173,7 @@ class Application
     }
 
     /**
-     * Loads the configuration with the given name. Configuration files are stored in `./config/`
-     * as JSON files.
-     *
-     * @param string $name The requested configuration
-     *
-     * @throws ConfigurationException If the configuration could not be retrieved for any reason
-     *
-     * @return Configuration The configuration matching the given name
+     * {@inheritdoc}
      */
     public function config(string $name): Configuration
     {
@@ -157,12 +187,7 @@ class Application
     }
 
     /**
-     * Instantiates a ITargetCatalog implementation.
-     *
-     * @throws CatalogInitializationException On any error when initializing the target catalog
-     * @throws ConfigurationException         On any configuration related error
-     *
-     * @return ITargetCatalog The created target catalog
+     * {@inheritdoc}
      */
     public function target_catalog(): ITargetCatalog
     {
@@ -178,16 +203,7 @@ class Application
     }
 
     /**
-     * Instantiates a ISourceCatalog implementation that matches the given name. Subsequent requests
-     * for the same catalog will return the same catalog, it will only be instantiated on the first
-     * request (assuming that request was successful).
-     *
-     * @param string $name The name of the catalog
-     *
-     * @throws CatalogInitializationException On any error when initializing the source catalog
-     * @throws ConfigurationException         On any configuration related error
-     *
-     * @return ISourceCatalog The created source catalog
+     * {@inheritdoc}
      */
     public function source_catalog(string $name): ISourceCatalog
     {
@@ -195,9 +211,11 @@ class Application
             $catalogs = [
                 'CBS'       => ODataCatalog::class,
                 'CBSDerden' => ODataCatalog::class,
+                'Eindhoven' => EindhovenSourceCatalog::class,
                 'NGR'       => NGRSourceCatalog::class,
                 'NMGN'      => NijmegenSourceCatalog::class,
                 'RDW'       => RDWSourceCatalog::class,
+                'SC'        => StelselCatalogusCatalog::class,
             ];
 
             if (!array_key_exists($name, $catalogs)) {
@@ -213,13 +231,7 @@ class Application
     }
 
     /**
-     * Creates a GuzzleHttp\Client.
-     *
-     * @param string $base_uri The optional base uri to assign
-     *
-     * @throws ConfigurationException On any configuration error
-     *
-     * @return Client The created client
+     * {@inheritdoc}
      */
     public function guzzle_client(string $base_uri = ''): Client
     {
@@ -239,11 +251,7 @@ class Application
     }
 
     /**
-     * Retrieves the CKAN credentials for a given catalog from the `.env`.
-     *
-     * @param string $catalog The catalog to request the credentials for
-     *
-     * @return string[] The credentials
+     * {@inheritdoc}
      */
     public function ckan_credentials(string $catalog): array
     {
@@ -257,9 +265,7 @@ class Application
     }
 
     /**
-     * Retrieve the mapping loader to be used by source catalogs.
-     *
-     * @return MappingLoader The mapping loader
+     * {@inheritdoc}
      */
     public function mapping_loader(): MappingLoader
     {
@@ -277,24 +283,7 @@ class Application
     }
 
     /**
-     * Returns the active database connection, if none exists, an active connection will be made.
-     * Uses the following `.env. variables:.
-     *
-     * - `DB_DRIVER`
-     * - `DB_HOST`
-     * - `DB_PORT`
-     * - `DB_DATABASE`
-     * - `DB_USERNAME`
-     * - `DB_PASSWORD`
-     * - `DB_SSL`
-     * - `DB_SSL_CERT`
-     * - `DB_SSL_KEY`
-     * - `DB_SSL_CA`
-     * - `DB_SSL_VERIFY`
-     *
-     * @throws DBALException On any error while connecting to the database
-     *
-     * @return Connection The active database connection
+     * {@inheritdoc}
      */
     public function database_connection(): Connection
     {
@@ -308,7 +297,7 @@ class Application
                 'password' => $_ENV['DB_PASSWORD'],
             ];
 
-            if ('false' !== $_ENV['DB_SSL']) {
+            if ('pdo_mysql' === $_ENV['DB_DRIVER'] && 'false' !== $_ENV['DB_SSL']) {
                 $database_config['driverOptions'] = [
                     PDO::MYSQL_ATTR_SSL_CERT               => $_ENV['DB_SSL_CERT'],
                     PDO::MYSQL_ATTR_SSL_KEY                => $_ENV['DB_SSL_KEY'],
@@ -324,9 +313,7 @@ class Application
     }
 
     /**
-     * Retrieves (and instantiates) a PHP mail client to use.
-     *
-     * @return PHPMailer The PHP mail client
+     * {@inheritdoc}
      */
     public function smtp_client(): PHPMailer
     {
@@ -354,27 +341,24 @@ class Application
     }
 
     /**
-     * Determines and returns the version of this application. The version is returned in the
-     * following format:.
-     *
-     * ```
-     * {version number} ({git commit hash})
-     * ```
-     *
-     * @return string The version of the application
+     * {@inheritdoc}
      */
     public function version(): string
     {
-        $version  = file_get_contents(self::APP_ROOT . 'VERSION');
-        $git_hash = trim(exec('git rev-parse --short HEAD'));
+        if (null === $this->version) {
+            $version  = file_get_contents(self::APP_ROOT . 'VERSION');
+            $git_hash = file_exists('/.dockerenv')
+                ? file_get_contents(self::APP_ROOT . 'CHECKSUM')
+                : trim(exec('git rev-parse --short HEAD'));
 
-        return sprintf('%s (%s)', $version, $git_hash);
+            $this->version = sprintf('%s (%s)', $version, $git_hash);
+        }
+
+        return $this->version;
     }
 
     /**
-     * Returns the Blade engine used to render templates.
-     *
-     * @return Blade The blade engine to use
+     * {@inheritdoc}
      */
     public function blade_engine(): Blade
     {
@@ -388,16 +372,16 @@ class Application
     }
 
     /**
-     * Generates a DateTimer object.
-     *
-     * @return DateTimer The generated object
+     * {@inheritdoc}
      */
     public function timer(): DateTimer
     {
         try {
             return new DateTimer($this->config('dates')->all());
         } catch (ConfigurationException $e) {
-            throw new DonlSyncRuntimeException($e->getMessage());
+            throw new DonlSyncRuntimeException(
+                'Missing or corrupt configuration for creating DateTimer object', 0, $e
+            );
         }
     }
 }

@@ -2,9 +2,6 @@
 
 namespace DonlSync\Dataset\Builder\BuildRule;
 
-use DCAT_AP_DONL\DCATDateTime;
-use DCAT_AP_DONL\DCATEntity;
-use DCAT_AP_DONL\DCATLiteral;
 use DCAT_AP_DONL\DCATTemporal;
 
 /**
@@ -18,8 +15,10 @@ class DCATTemporalBuildRule extends AbstractDCATEntityBuildRule implements IDCAT
 {
     /**
      * {@inheritdoc}
+     *
+     * @return DCATTemporal|null The created DCATTemporal
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATTemporal
     {
         $label = ($this->createLiteralBuildRule('temporal_label'))
             ->build($data, $notices);
@@ -35,17 +34,14 @@ class DCATTemporalBuildRule extends AbstractDCATEntityBuildRule implements IDCAT
         $dcat_temporal = new DCATTemporal();
 
         if ($label) {
-            /* @var DCATLiteral $label */
             $dcat_temporal->setLabel($label);
         }
 
         if ($start) {
-            /* @var DCATDateTime $start */
             $dcat_temporal->setStart($start);
         }
 
         if ($end) {
-            /* @var DCATDateTime $end */
             $dcat_temporal->setEnd($end);
         }
 
@@ -62,6 +58,8 @@ class DCATTemporalBuildRule extends AbstractDCATEntityBuildRule implements IDCAT
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATTemporal[] The created DCATTemporals
      */
     public function buildMultiple(array &$data, array &$notices): array
     {

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 
-set -e
-set -u
+set -eu
 
 
 ENV_SOURCE=./.env.dist
@@ -15,11 +14,15 @@ VIEW_CACHE_DIR=./cache/views
 cd "$(dirname "$0")/../"
 
 
-if [ ! -f ${ENV_FILE} ]; then
-    echo "File ${ENV_FILE} does not exist; creating one from ${ENV_SOURCE}."
-    echo "You should now update the ${ENV_FILE} file with the correct data."
+if [ -f ${ENV_SOURCE} ]; then
 
-    cp "${ENV_SOURCE}" "${ENV_FILE}"
+    if [ ! -f ${ENV_FILE} ]; then
+        echo "File ${ENV_FILE} does not exist; creating one from ${ENV_SOURCE}."
+        echo "You should now update the ${ENV_FILE} file with the correct data."
+
+        cp "${ENV_SOURCE}" "${ENV_FILE}"
+    fi
+
 fi
 
 

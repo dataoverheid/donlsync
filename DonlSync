@@ -12,8 +12,10 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Dotenv\Dotenv;
 
 try {
-    $dotenv = new Dotenv(false);
-    $dotenv->load(__DIR__ . '/.env');
+    if (is_readable(__DIR__ . '/.env')) {
+        $dotenv = new Dotenv(false);
+        $dotenv->load(__DIR__ . '/.env');
+    }
 
     $application = new Application();
     $application->setName($_ENV['APPLICATION_NAME']);

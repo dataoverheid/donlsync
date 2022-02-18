@@ -1,0 +1,95 @@
+{
+  "catalog_name": "Eindhoven",
+  "catalog_endpoint": "https://data.eindhoven.nl",
+  "api_base_path": "https://data.eindhoven.nl",
+  "api": {
+    "requests": {
+      "schemas": "api/v2/catalog/datasets"
+    }
+  },
+  "dataschema": {
+    "distributionType": "https://data.overheid.nl/distributiontype/dataschema",
+    "format": "http://publications.europa.eu/resource/authority/file-type/JSON"
+  },
+  "mappings": {
+    "defaults": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/defaults/Eindhoven.json",
+    "transformations": [
+      {
+        "attribute": "accessRights",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Dataset__AccessRights.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "frequency",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Dataset__Frequency.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "language",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Dataset__Language.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "license",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Dataset__License.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "theme",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Dataset__Theme.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.format",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Distribution__Format.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.language",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Distribution__Language.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.license",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Distribution__License.json",
+        "field": "target_value"
+      },
+      {
+        "attribute": "resource.mediaType",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/value-mappings/Eindhoven__Distribution__MediaType.json",
+        "field": "target_value"
+      }
+    ],
+    "blacklists": [],
+    "whitelists": []
+  },
+  "identifier_pattern": "https://data.eindhoven.nl/explore/dataset/%s/",
+  "dataset": {
+    "field_mapping": {
+      "identifier": "identifier",
+      "title": "title",
+      "description": "description",
+      "modified": "modificationDate",
+      "landingPage": "landingPage",
+      "accessLevel": "accessRights",
+      "theme": "theme",
+      "keyword": "keyword",
+      "rights": "license",
+      "references": "relatedResource",
+      "language": "language"
+    }
+  },
+  "distribution": {
+    "field_mapping": {
+      "format": "format",
+      "mediaType": "mediaType"
+    },
+    "inheritance": {
+      "rights": "license",
+      "language": "language"
+    },
+    "copy_fields": {
+      "format": "title"
+    }
+  }
+}

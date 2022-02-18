@@ -1,0 +1,97 @@
+{
+  "ckan_query": "alternate_identifier:[* TO *] AND source_catalog:\"http://www.stelselcatalogus.nl\"",
+  "concept_base_path": "https://www.stelselcatalogus.nl/",
+  "concept_path": "api/v2/begrippen",
+  "schema_path": "api/v2/gegevenselementen",
+  "schema_mapping": {
+    "name": "prefLabel",
+    "description": "definitie"
+  },
+  "mappings": {
+    "defaults": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/defaults/SC.json",
+    "transformations": [
+    ],
+    "blacklists": [
+    ],
+    "whitelists": [
+    ]
+  },
+  "dataschema": {
+    "distributionType": "https://data.overheid.nl/distributiontype/dataschema",
+    "format": "http://publications.europa.eu/resource/authority/file-type/JSON"
+  },
+  "catalog_name": "SC",
+  "catalog_endpoint": "http://data.overheid.nl",
+  "api_base_path": "http://data.overheid.nl/data/",
+  "api_row_count": 1000,
+  "identifier_pattern": "/https?\\:\\/\\/opendata\\.stelselcatalogus\\.nl\\/id\\/registratie\\/(.+)/m",
+  "ckan_field_mapping": {
+    "dataset": {
+      "identifier": "identifier",
+      "alternate_identifier": "alternateIdentifier",
+      "title": "title",
+      "notes": "description",
+      "authority": "authority",
+      "publisher": "publisher",
+      "contact_point_name": "contact_point_name",
+      "contact_point_title": "contact_point_title",
+      "contact_point_phone": "contact_point_phone",
+      "contact_point_website": "contact_point_webpage",
+      "contact_point_email": "contact_point_email",
+      "contact_point_address": "contact_point_address",
+      "modified": "modificationDate",
+      "license_id": "license",
+      "metadata_language": "metadataLanguage",
+      "language": "language",
+      "access_rights": "accessRights",
+      "dataset_status": "datasetStatus",
+      "theme": "theme",
+      "url": "landingPage",
+      "spatial_scheme": "spatial_scheme",
+      "spatial_value": "spatial_value",
+      "temporal_label": "temporal_label",
+      "temporal_start": "temporal_start",
+      "temporal_end": "temporal_end",
+      "conforms_to": "conformsTo",
+      "related_resource": "relatedResource",
+      "source": "source",
+      "has_version": "hasVersion",
+      "is_version_of": "isVersionOf",
+      "release_date": "releaseDate",
+      "version": "version",
+      "version_notes": "versionNotes",
+      "legal_foundation_label": "legal_foundation_label",
+      "legal_foundation_ref": "legal_foundation_ref",
+      "legal_foundation_uri": "legal_foundation_uri",
+      "date_planned": "datePlanned",
+      "documentation": "documentation",
+      "frequency": "frequency",
+      "provenance": "provenance",
+      "sample": "sample",
+      "high_value": "highValue",
+      "referentie_data": "referentieData",
+      "basis_register": "basisRegister",
+      "source_catalog": "sourceCatalog"
+    },
+    "resource": {
+      "name": "title",
+      "description": "description",
+      "url": "accessURL",
+      "download_url": "downloadURL",
+      "license_id": "license",
+      "metadata_language": "metadataLanguage",
+      "language": "language",
+      "format": "format",
+      "media_type": "mediaType",
+      "rights": "rights",
+      "status": "status",
+      "release_date": "releaseDate",
+      "modification_date": "modificationDate",
+      "size": "byteSize",
+      "linked_schemas": "linkedSchemas",
+      "documentation": "documentation",
+      "hash": "hash",
+      "hash_algorithm": "hash_algorithm"
+    }
+  }
+}

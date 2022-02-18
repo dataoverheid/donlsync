@@ -13,14 +13,23 @@ use GuzzleHttp\Exception\RequestException;
  */
 class MappingLoader
 {
-    /** @var string[] */
-    private $license_fields;
+    /**
+     * The fields for which to use the special LicenseValueMapper rather than the standard
+     * ValueMapper.
+     *
+     * @var string[]
+     */
+    private array $license_fields;
 
-    /** @var string */
-    private $license_value_mapper;
+    /**
+     * The fully namespaced path of the class to use for value-mapping license fields.
+     */
+    private string $license_value_mapper;
 
-    /** @var string */
-    private $fallback_license;
+    /**
+     * The license to use as a fallback if no valid license can be constructed.
+     */
+    private string $fallback_license;
 
     /**
      * MappingLoader constructor.
@@ -74,9 +83,9 @@ class MappingLoader
      * ]
      * ```
      *
-     * @param array  $sources       The URLs from which to load the mappings
-     * @param string $mapping_class The mapping class to instantiate and return
-     * @param Client $client        The HTTP client to use
+     * @param array<string, array> $sources       The URLs from which to load the mappings
+     * @param string               $mapping_class The mapping class to instantiate and return
+     * @param Client               $client        The HTTP client to use
      *
      * @throws MappingException If, for any reason, the mappings could not be retrieved from a given
      *                          url
@@ -139,7 +148,7 @@ class MappingLoader
      * @throws MappingException If, for any reason, the mappings could not be retrieved from the
      *                          given url
      *
-     * @return array The JSON contents
+     * @return array<mixed, mixed> The JSON contents
      */
     private function loadJSONContentsFromURL(string $url, Client $client): array
     {
@@ -153,7 +162,7 @@ class MappingLoader
                 ));
             }
 
-            $response_body = $response->getBody();
+            $response_body = $response->getBody()->getContents();
 
             if ('' === $response_body) {
                 throw new MappingException(
@@ -163,7 +172,7 @@ class MappingLoader
 
             $json_contents = json_decode($response_body, true);
 
-            if (null == $json_contents) {
+            if (null === $json_contents) {
                 throw new MappingException(
                     sprintf('the mapping at %s contains invalid JSON', $url)
                 );

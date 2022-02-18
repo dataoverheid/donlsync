@@ -11,6 +11,12 @@ end_of_line = lf
 [*.json]
 indent_size = 2
 
+[{*.yml, *.yaml, *.neon, *.neon.dist}]
+indent_size = 2
+
+[{*.xml, *.xml.dist}]
+indent_size = 2
+
 [*.php]
 max_line_length = 100
 

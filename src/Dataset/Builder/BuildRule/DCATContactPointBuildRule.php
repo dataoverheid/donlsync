@@ -3,9 +3,6 @@
 namespace DonlSync\Dataset\Builder\BuildRule;
 
 use DCAT_AP_DONL\DCATContactPoint;
-use DCAT_AP_DONL\DCATEntity;
-use DCAT_AP_DONL\DCATLiteral;
-use DCAT_AP_DONL\DCATURI;
 
 /**
  * Class DCATContactPointBuildRule.
@@ -18,8 +15,10 @@ class DCATContactPointBuildRule extends AbstractDCATEntityBuildRule implements I
 {
     /**
      * {@inheritdoc}
+     *
+     * @return DCATContactPoint|null The created DCATContactPoint
      */
-    public function build(array &$data, array &$notices): ?DCATEntity
+    public function build(array &$data, array &$notices): ?DCATContactPoint
     {
         $name    = ($this->createLiteralBuildRule('contact_point_name'))->build($data, $notices);
         $address = ($this->createLiteralBuildRule('contact_point_address'))->build($data, $notices);
@@ -35,36 +34,36 @@ class DCATContactPointBuildRule extends AbstractDCATEntityBuildRule implements I
         $dcat_contact_point = new DCATContactPoint();
 
         if ($name) {
-            /* @var DCATLiteral $name */
             $dcat_contact_point->setFullName($name);
         }
 
         if ($address) {
-            /* @var DCATLiteral $address */
             $dcat_contact_point->setAddress($address);
         }
 
         if ($title) {
-            /* @var DCATLiteral $title */
             $dcat_contact_point->setTitle($title);
         }
 
         if ($email) {
-            /* @var DCATLiteral $email */
             $dcat_contact_point->setEmail($email);
         }
 
         if ($webpage) {
-            /* @var DCATURI $webpage */
             $dcat_contact_point->setWebpage($webpage);
         }
 
         if ($phone) {
-            /* @var DCATLiteral $phone */
             $dcat_contact_point->setPhone($phone);
         }
 
         if (!$dcat_contact_point->validate()->validated()) {
+            foreach ($dcat_contact_point->validate()->getMessages() as $message) {
+                $notices[] = sprintf('%s: %s: %s',
+                    $this->prefix, ucfirst($this->property), $message
+                );
+            }
+
             $notices[] = sprintf('%s: %s: value is not valid, discarding',
                 $this->prefix, ucfirst($this->property)
             );
@@ -77,6 +76,8 @@ class DCATContactPointBuildRule extends AbstractDCATEntityBuildRule implements I
 
     /**
      * {@inheritdoc}
+     *
+     * @return DCATContactPoint[] The created DCATContactPoints
      */
     public function buildMultiple(array &$data, array &$notices): array
     {

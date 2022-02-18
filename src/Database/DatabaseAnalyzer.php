@@ -3,7 +3,7 @@
 namespace DonlSync\Database;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use DonlSync\Catalog\Source\ISourceCatalog;
 use DonlSync\Catalog\Target\ITargetCatalog;
 use DonlSync\Database\Repository\ProcessedDatasetsRepository;
@@ -20,20 +20,30 @@ use DonlSync\Helper\OutputHelper;
  */
 class DatabaseAnalyzer
 {
-    /** @var Connection */
-    protected $connection;
+    /**
+     * The current database connection.
+     */
+    protected ?Connection $connection;
 
-    /** @var ITargetCatalog */
-    protected $target_catalog;
+    /**
+     * The target catalog to which datasets are sent by the application.
+     */
+    protected ?ITargetCatalog $target_catalog;
 
-    /** @var ISourceCatalog */
-    protected $source_catalog;
+    /**
+     * The source catalog being processed by the application.
+     */
+    protected ?ISourceCatalog $source_catalog;
 
-    /** @var OutputHelper */
-    protected $output_helper;
+    /**
+     * Helper implementation for writing specific messages as output.
+     */
+    protected ?OutputHelper $output_helper;
 
-    /** @var bool */
-    protected $should_output;
+    /**
+     * Whether to write any output.
+     */
+    protected bool $should_output;
 
     /**
      * DatabaseAnalyzer constructor.
@@ -50,9 +60,9 @@ class DatabaseAnalyzer
     /**
      * Getter for the connection property.
      *
-     * @return Connection The connection property
+     * @return Connection|null The connection property
      */
-    public function getConnection(): Connection
+    public function getConnection(): ?Connection
     {
         return $this->connection;
     }
@@ -60,9 +70,9 @@ class DatabaseAnalyzer
     /**
      * Getter for the target_catalog property.
      *
-     * @return ITargetCatalog The target_catalog property
+     * @return ITargetCatalog|null The target_catalog property
      */
-    public function getTargetCatalog(): ITargetCatalog
+    public function getTargetCatalog(): ?ITargetCatalog
     {
         return $this->target_catalog;
     }
@@ -70,9 +80,9 @@ class DatabaseAnalyzer
     /**
      * Getter for the source_catalog property.
      *
-     * @return ISourceCatalog The source_catalog property
+     * @return ISourceCatalog|null The source_catalog property
      */
-    public function getSourceCatalog(): ISourceCatalog
+    public function getSourceCatalog(): ?ISourceCatalog
     {
         return $this->source_catalog;
     }
@@ -80,9 +90,9 @@ class DatabaseAnalyzer
     /**
      * Getter for the output_helper property.
      *
-     * @return OutputHelper The output_helper property
+     * @return OutputHelper|null The output_helper property
      */
-    public function getOutputHelper(): OutputHelper
+    public function getOutputHelper(): ?OutputHelper
     {
         return $this->output_helper;
     }
@@ -191,8 +201,8 @@ class DatabaseAnalyzer
      * Deletes all database records which no longer point to an existing dataset on the target
      * catalog.
      *
-     * @param array $datasets_on_target   The datasets as they exist on the target catalog
-     * @param array $datasets_on_database The datasets as they exist in the local database
+     * @param array<int, array> $datasets_on_target   The datasets as they exist on the target catalog
+     * @param array<int, array> $datasets_on_database The datasets as they exist in the local database
      */
     private function deleteAbsentRecords(array $datasets_on_target,
                                          array $datasets_on_database): void
@@ -245,8 +255,8 @@ class DatabaseAnalyzer
      * Creates database records for all datasets that exist on the target catalog but are absent in
      * the local database.
      *
-     * @param array $datasets_on_target   The datasets as they exist on the target catalog
-     * @param array $datasets_on_database The datasets as they exist in the local database
+     * @param array<int, array> $datasets_on_target   The datasets as they exist on the target catalog
+     * @param array<int, array> $datasets_on_database The datasets as they exist in the local database
      */
     private function createMissingRecords(array $datasets_on_target,
                                           array $datasets_on_database): void
@@ -280,7 +290,7 @@ class DatabaseAnalyzer
                     'catalog_name'       => $this->source_catalog->getCatalogSlugName(),
                     'catalog_identifier' => $target_dataset['identifier'],
                     'target_identifier'  => $target_dataset['id'],
-                    'dataset_hash'       => 'unknown',
+                    'dataset_hash'       => $target_dataset['donlsync_checksum'] ?? 'unknown',
                     'assigned_number'    => (int) explode('-', $target_dataset['name'])[0],
                 ];
                 ProcessedDatasetsRepository::insertRecord($this->connection, $record);

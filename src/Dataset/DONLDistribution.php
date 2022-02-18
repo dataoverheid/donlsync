@@ -11,8 +11,11 @@ use DCAT_AP_DONL\DCATDistribution;
  */
 class DONLDistribution extends DCATDistribution
 {
-    /** @var string */
-    protected $id;
+    /**
+     * The CKAN resource ID of the distribution. May be null if the distribution does not exist yet
+     * in CKAN.
+     */
+    protected ?string $id;
 
     /**
      * DONLDistribution constructor.
@@ -26,6 +29,8 @@ class DONLDistribution extends DCATDistribution
 
     /**
      * {@inheritdoc}
+     *
+     * @return array<string, mixed> A key => value array of the entity
      */
     public function getData(): array
     {

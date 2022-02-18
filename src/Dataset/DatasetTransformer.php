@@ -14,11 +14,21 @@ use DonlSync\Configuration;
  */
 class DatasetTransformer
 {
-    /** @var string[] */
-    private $dataset_mapping;
+    /**
+     * The mapping data for transforming the DCAT datasets into a dictionary that can be sent to a
+     * CKAN installation as a package.
+     *
+     * @var array<string, array>
+     */
+    private array $dataset_mapping;
 
-    /** @var string[] */
-    private $resource_mapping;
+    /**
+     * The mapping data for transforming the DCAT distributions into a dictionary that can be sent
+     * to a CKAN installation as a resource.
+     *
+     * @var array<string, array>
+     */
+    private array $resource_mapping;
 
     /**
      * DatasetTransformer constructor.
@@ -29,6 +39,8 @@ class DatasetTransformer
     {
         $config = $ckan_config->all();
 
+        Configuration::checkKeys($config, ['dataset_mapping', 'resource_mapping']);
+
         $this->dataset_mapping  = $config['dataset_mapping'];
         $this->resource_mapping = $config['resource_mapping'];
     }
@@ -38,7 +50,7 @@ class DatasetTransformer
      *
      * @param DCATDataset $dataset The dataset to transform
      *
-     * @return array The DCATDataset as a key/value array
+     * @return array<string, mixed> The DCATDataset as a key/value array
      */
     public function transform(DCATDataset $dataset): array
     {
@@ -70,10 +82,10 @@ class DatasetTransformer
      * Transforms a given property present in the given dataset into a key/value pair placed in the
      * transformed array.
      *
-     * @param string      $property    The property to retrieve from the dataset
-     * @param string      $target_key  The key on which the value should be set
-     * @param array       $transformed The container holding the transformed dataset
-     * @param DCATDataset $dataset     The dataset to transform
+     * @param string               $property    The property to retrieve from the dataset
+     * @param string               $target_key  The key on which the value should be set
+     * @param array<string, mixed> $transformed The container holding the transformed dataset
+     * @param DCATDataset          $dataset     The dataset to transform
      */
     protected function transformProperty(string $property, string $target_key, array &$transformed,
                                          DCATDataset $dataset): void
@@ -91,10 +103,10 @@ class DatasetTransformer
      * Transforms a given multi valued property present in the given dataset into a key/value pair
      * placed in the transformed array.
      *
-     * @param string      $property    The property to retrieve from the dataset
-     * @param string      $target_key  The key on which the value should be set
-     * @param array       $transformed The container holding the transformed dataset
-     * @param DCATDataset $dataset     The dataset to transform
+     * @param string               $property    The property to retrieve from the dataset
+     * @param string               $target_key  The key on which the value should be set
+     * @param array<string, mixed> $transformed The container holding the transformed dataset
+     * @param DCATDataset          $dataset     The dataset to transform
      */
     protected function transformMultiValueProperty(string $property, string $target_key,
                                                    array &$transformed, DCATDataset $dataset): void
@@ -110,23 +122,26 @@ class DatasetTransformer
     /**
      * Transforms the keywords of the dataset into a valid CKAN tag_string.
      *
-     * @param array       $transformed The container holding the transformed dataset
-     * @param DCATDataset $dataset     The dataset to transform
+     * @param array<string, mixed> $transformed The container holding the transformed dataset
+     * @param DCATDataset          $dataset     The dataset to transform
      */
     protected function transformKeyword(array &$transformed, DCATDataset $dataset): void
     {
-        foreach ($dataset->getKeyword() as $keyword) {
-            $transformed['tags'][] = [
-                'name' => iconv('UTF-8', 'UTF-8//IGNORE', $keyword->getData()),
-            ];
-        }
+        $transformed['tag_string'] = implode(', ', array_map(function ($element) {
+            $tag = iconv('UTF-8', 'UTF-8//IGNORE', $element->getData());
+
+            // TODO:
+            // Properly filter out all non-alphanumerical characters or symbols. This fixes
+            // immediate validation error for Eindhoven for now.
+            return preg_replace(['/[\x00-\x1F\x80-\xFF]/', '/\'/', '/\//'], '', $tag);
+        }, $dataset->getKeyword()));
     }
 
     /**
      * Transforms the contactPoint of a dataset into the transformed container.
      *
-     * @param array       $transformed The container holding the transformed dataset
-     * @param DCATDataset $dataset     The dataset to transform
+     * @param array<string, mixed> $transformed The container holding the transformed dataset
+     * @param DCATDataset          $dataset     The dataset to transform
      */
     protected function transformContactPoint(array &$transformed, DCATDataset $dataset): void
     {
@@ -162,8 +177,8 @@ class DatasetTransformer
     /**
      * Transforms the spatials of the dataset into key/value pairs.
      *
-     * @param array       $transformed The container holding the transformed dataset
-     * @param DCATDataset $dataset     The dataset to transform
+     * @param array<string, mixed> $transformed The container holding the transformed dataset
+     * @param DCATDataset          $dataset     The dataset to transform
      */
     protected function transformSpatial(array &$transformed, DCATDataset $dataset): void
     {
@@ -176,8 +191,8 @@ class DatasetTransformer
     /**
      * Transforms the temporal of the dataset into key/value pairs.
      *
-     * @param array       $transformed The container holding the transformed dataset
-     * @param DCATDataset $dataset     The dataset to transform
+     * @param array<string, mixed> $transformed The container holding the transformed dataset
+     * @param DCATDataset          $dataset     The dataset to transform
      */
     protected function transformTemporal(array &$transformed, DCATDataset $dataset): void
     {
@@ -203,8 +218,8 @@ class DatasetTransformer
     /**
      * Transforms the legalFoundation of the dataset into key/value pairs.
      *
-     * @param array       $transformed The container holding the transformed dataset
-     * @param DCATDataset $dataset     The dataset to transform
+     * @param array<string, mixed> $transformed The container holding the transformed dataset
+     * @param DCATDataset          $dataset     The dataset to transform
      */
     protected function transformLegalFoundation(array &$transformed, DCATDataset $dataset): void
     {
@@ -222,15 +237,23 @@ class DatasetTransformer
     /**
      * Transforms the distributions of the dataset into key/value pairs.
      *
-     * @param array       $transformed The container holding the transformed dataset
-     * @param DCATDataset $dataset     The dataset to transform
+     * @param array<string, mixed> $transformed The container holding the transformed dataset
+     * @param DCATDataset          $dataset     The dataset to transform
      *
-     * @return array The updated transformed container
+     * @return array<string, mixed> The updated transformed container
      */
     protected function transformDistribution(array &$transformed, DCATDataset $dataset): array
     {
         foreach ($dataset->getDistributions() as $distribution) {
             $resource = [];
+
+            if ($distribution instanceof DONLDistribution) {
+                $id = $distribution->getId();
+
+                if ($id) {
+                    $resource['id'] = $id;
+                }
+            }
 
             foreach ($this->resource_mapping as $dcat_field => $mapping) {
                 if (true === $mapping['multi']) {
@@ -256,10 +279,10 @@ class DatasetTransformer
      * Transforms a given property present in the given distribution into a key/value pair placed in
      * the transformed array.
      *
-     * @param string           $property     The property to retrieve from the dataset
-     * @param string           $target_key   The key behind which to place the transformed data
-     * @param array            $transformed  The container holding the transformed distribution
-     * @param DCATDistribution $distribution The distribution to transform
+     * @param string               $property     The property to retrieve from the dataset
+     * @param string               $target_key   The key behind which to place the transformed data
+     * @param array<string, mixed> $transformed  The container holding the transformed distribution
+     * @param DCATDistribution     $distribution The distribution to transform
      */
     protected function transformDistributionProperty(string $property, string $target_key,
                                                      array &$transformed,
@@ -278,10 +301,10 @@ class DatasetTransformer
      * Transforms a given multi valued property present in the given distribution into a key/value
      * pair placed in the transformed array.
      *
-     * @param string           $property     The property to retrieve from the dataset
-     * @param string           $target_key   The key behind which to place the transformed data
-     * @param array            $transformed  The container holding the transformed distribution
-     * @param DCATDistribution $distribution The distribution to transform
+     * @param string               $property     The property to retrieve from the dataset
+     * @param string               $target_key   The key behind which to place the transformed data
+     * @param array<string, mixed> $transformed  The container holding the transformed distribution
+     * @param DCATDistribution     $distribution The distribution to transform
      */
     protected function transformDistributionMultiValuedProperty(string $property,
                                                                 string $target_key,
@@ -299,8 +322,8 @@ class DatasetTransformer
     /**
      * Transforms the checksum of the distribution into key/value pairs.
      *
-     * @param array            $resource     The container holding the transformed distribution
-     * @param DCATDistribution $distribution The distribution to transform
+     * @param array<string, mixed> $resource     The container holding the transformed distribution
+     * @param DCATDistribution     $distribution The distribution to transform
      */
     protected function transformDistributionChecksum(array &$resource,
                                                      DCATDistribution $distribution): void

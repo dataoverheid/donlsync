@@ -6,6 +6,8 @@ use DOMDocument;
 use DOMNode;
 use DOMNodeList;
 use DOMXPath;
+use DonlSync\Configuration;
+use DonlSync\Exception\DonlSyncRuntimeException;
 
 /**
  * Class XMLParser.
@@ -15,22 +17,35 @@ use DOMXPath;
  */
 class XMLParser
 {
-    /** @var DOMXPath */
-    protected $xpath;
+    /**
+     * The object for traversing a XML document.
+     */
+    protected DOMXPath $xpath;
 
-    /** @var array */
-    protected $xpath_selectors;
+    /**
+     * A `{key} => {value}` array of XPath selectors for a given DCAT property.
+     *
+     * @var array<string, array>
+     */
+    protected array $xpath_selectors;
 
     /**
      * XMLParser constructor.
      *
-     * @param string $xml             The XML to harvest data from
-     * @param array  $xpath_selectors The XPath selectors to query for named fields
+     * @param string               $xml             The XML to harvest data from
+     * @param array<string, array> $xpath_selectors The XPath selectors to query for named fields
      */
     public function __construct(string $xml, array $xpath_selectors)
     {
+        Configuration::checkKeys($xpath_selectors, ['namespaces']);
+
+        libxml_use_internal_errors(true);
+
         $xml_document = new DOMDocument();
-        $xml_document->loadXML($xml);
+
+        if (empty($xml) || !$xml_document->loadXML($xml)) {
+            throw new DonlSyncRuntimeException('Invalid XML provided');
+        }
 
         $this->xpath           = new DOMXPath($xml_document);
         $this->xpath_selectors = $xpath_selectors;
@@ -41,13 +56,14 @@ class XMLParser
     /**
      * Wrapper for `DOMXPath::query()`.
      *
-     * @param string $query The query to execute
+     * @param string       $query The query to execute
+     * @param DOMNode|null $node  The contextual node
      *
-     * @return DOMNodeList|bool The search results
+     * @return DOMNodeList<DOMNode>|bool The search results
      */
-    public function query(string $query)
+    public function query(string $query, DOMNode $node = null)
     {
-        return $this->xpath->query($query);
+        return $this->xpath->query($query, $node);
     }
 
     /**
@@ -82,6 +98,10 @@ class XMLParser
     {
         $items = $this->xpath->query($query, $node);
         $data  = [];
+
+        if (false === $items) {
+            return $data;
+        }
 
         foreach ($items as $item) {
             if (empty($item->nodeValue)) {

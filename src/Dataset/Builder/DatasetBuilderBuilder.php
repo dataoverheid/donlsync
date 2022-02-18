@@ -13,8 +13,10 @@ use DonlSync\Dataset\Builder\BuildRule\IDCATEntityBuildRule;
  */
 class DatasetBuilderBuilder
 {
-    /** @var DatasetBuilder */
-    protected $build;
+    /**
+     * The DatasetBuilder instance being built.
+     */
+    protected DatasetBuilder $build;
 
     /**
      * DatasetBuilderBuilder constructor.

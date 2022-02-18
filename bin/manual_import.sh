@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-set -u
+set -eu
 
 if [ $# == 0 ]; then
     echo Usage: "$(basename "$0")" /path/to/logging/directory >&1
@@ -20,7 +19,15 @@ if [ ! -e "${LOCK_FILE}" ]; then
     # shellcheck disable=SC2064
     trap "rm -f ${LOCK_FILE}" EXIT
 
-    declare -a catalogs=("CBS" "CBSDerden" "NGR" "NMGN" "RDW")
+    declare -a catalogs=(
+        "CBS"
+        "CBSDerden"
+        "Eindhoven"
+        "NGR"
+        "NMGN"
+        "RDW"
+        "SC"
+    )
 
     for catalog in "${catalogs[@]}";
     do
