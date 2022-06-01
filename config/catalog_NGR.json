@@ -62,6 +62,11 @@
       }
     ],
     "blacklists": [
+      {
+        "attribute": "identifier",
+        "url": "https://raw.githubusercontent.com/dataoverheid/donlsync-mappings/master/blacklists/NGR__Dataset__Identifier.json",
+        "field": "blacklisted"
+      }
     ],
     "whitelists": [
     ]

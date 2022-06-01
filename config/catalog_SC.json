@@ -76,6 +76,7 @@
     "resource": {
       "name": "title",
       "description": "description",
+      "distribution_type": "distributionType",
       "url": "accessURL",
       "download_url": "downloadURL",
       "license_id": "license",

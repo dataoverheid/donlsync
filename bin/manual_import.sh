@@ -24,7 +24,6 @@ if [ ! -e "${LOCK_FILE}" ]; then
         "CBSDerden"
         "Eindhoven"
         "NGR"
-        "NMGN"
         "RDW"
         "SC"
     )

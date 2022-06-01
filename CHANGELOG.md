@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.1.0 (2022/05)
+
+- Add identifier blacklist for NGR source catalog.
+
+## 5.0.0 (2022/05)
+
+- Remove Nijmegen source catalog from DonlSync.
+
+## 4.7.5 (2022/03)
+
+- Fix Stelselcatalogus source catalog so that data schemas are not stored as a new distribution when synced. 
+
 ## 4.7.4 (2022/02)
 
 - Downgraded the `composer.lock` file to satisfy the PHP 7.4 minimum requirement.

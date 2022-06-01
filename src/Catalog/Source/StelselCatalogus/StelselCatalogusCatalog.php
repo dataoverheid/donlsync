@@ -123,8 +123,8 @@ class StelselCatalogusCatalog extends CKANCatalog implements ISourceCatalog
      */
     private static function isDataSchemaResource(array $resource): bool
     {
-        return array_key_exists('distribution_type', $resource)
-            && 'https://data.overheid.nl/distributiontype/dataschema' === $resource['distribution_type'];
+        return array_key_exists('distributionType', $resource)
+            && 'https://data.overheid.nl/distributiontype/dataschema' === $resource['distributionType'];
     }
 
     /**
