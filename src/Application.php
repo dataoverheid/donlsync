@@ -7,7 +7,6 @@ use Doctrine\DBAL\DriverManager;
 use DonlSync\Catalog\Source\Eindhoven\EindhovenSourceCatalog;
 use DonlSync\Catalog\Source\ISourceCatalog;
 use DonlSync\Catalog\Source\NGR\NGRSourceCatalog;
-use DonlSync\Catalog\Source\NMGN\NijmegenSourceCatalog;
 use DonlSync\Catalog\Source\ODataCatalog\ODataCatalog;
 use DonlSync\Catalog\Source\RDW\RDWSourceCatalog;
 use DonlSync\Catalog\Source\StelselCatalogus\StelselCatalogusCatalog;
@@ -213,7 +212,6 @@ class Application implements ApplicationInterface
                 'CBSDerden' => ODataCatalog::class,
                 'Eindhoven' => EindhovenSourceCatalog::class,
                 'NGR'       => NGRSourceCatalog::class,
-                'NMGN'      => NijmegenSourceCatalog::class,
                 'RDW'       => RDWSourceCatalog::class,
                 'SC'        => StelselCatalogusCatalog::class,
             ];
