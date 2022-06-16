@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.1.1 (2022/06)
+
+- Composer update.
+
 ## 5.1.0 (2022/05)
 
 - Add identifier blacklist for NGR source catalog.
